@@ -1,0 +1,58 @@
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+
+from app.database import SessionLocal
+from app.schemas.restaurant import RestaurantCreate, RestaurantResponse, RestaurantUpdate
+from app.services.restaurant_service import RestaurantService
+
+router = APIRouter(prefix="/restaurants", tags=["restaurants"])
+
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+@router.post("/", response_model=RestaurantResponse, status_code=status.HTTP_201_CREATED)
+def create_restaurant(restaurant: RestaurantCreate, db: Session = Depends(get_db)):
+    service = RestaurantService(db)
+    return service.create(restaurant)
+
+
+@router.get("/{restaurant_id}", response_model=RestaurantResponse)
+def get_restaurant(restaurant_id: UUID, db: Session = Depends(get_db)):
+    service = RestaurantService(db)
+    restaurant = service.get_by_id(restaurant_id)
+    if not restaurant:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Restaurant not found")
+    return restaurant
+
+
+@router.get("/", response_model=list[RestaurantResponse])
+def get_restaurants(db: Session = Depends(get_db)):
+    service = RestaurantService(db)
+    return service.get_all()
+
+
+@router.put("/{restaurant_id}", response_model=RestaurantResponse)
+def update_restaurant(restaurant_id: UUID, restaurant_data: RestaurantUpdate, db: Session = Depends(get_db)):
+    service = RestaurantService(db)
+    restaurant = service.get_by_id(restaurant_id)
+    if not restaurant:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Restaurant not found")
+    return service.update(restaurant, restaurant_data)
+
+
+@router.delete("/{restaurant_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_restaurant(restaurant_id: UUID, db: Session = Depends(get_db)):
+    service = RestaurantService(db)
+    restaurant = service.get_by_id(restaurant_id)
+    if not restaurant:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Restaurant not found")
+    service.delete(restaurant)
+    return None
