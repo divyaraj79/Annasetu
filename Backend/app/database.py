@@ -1,10 +1,13 @@
 from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import sessionmaker
 
+from app.config import DATABASE_URL
 
-DATABASE_URL = "YOUR_DATABASE_URL"
-
-engine = create_engine(DATABASE_URL)
+engine = create_engine(
+    DATABASE_URL,
+    pool_pre_ping=True
+)
 
 SessionLocal = sessionmaker(
     autocommit=False,
@@ -13,5 +16,3 @@ SessionLocal = sessionmaker(
 )
 
 Base = declarative_base()
-
-from app.models import *
