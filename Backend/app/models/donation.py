@@ -92,6 +92,12 @@ class Donation(Base):
         nullable=False
     )
 
+    is_deleted = Column(
+        Boolean,
+        default=False,
+        nullable=False
+    )
+
     restaurant = relationship(
         "Restaurant",
         back_populates="donations"

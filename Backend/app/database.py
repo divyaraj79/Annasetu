@@ -1,6 +1,6 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
-from app.models import *
+
 
 DATABASE_URL = "YOUR_DATABASE_URL"
 
@@ -13,3 +13,5 @@ SessionLocal = sessionmaker(
 )
 
 Base = declarative_base()
+
+from app.models import *

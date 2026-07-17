@@ -65,6 +65,12 @@ class Need(Base):
         onupdate=func.now()
     )
 
+    is_deleted = Column(
+        Boolean,
+        default=False,
+        nullable=False
+    )
+
     ngo = relationship(
         "NGO",
         back_populates="needs"

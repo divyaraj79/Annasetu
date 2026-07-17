@@ -35,6 +35,12 @@ class NGO(Base):
 
     verified = Column(Boolean, default=False)
 
+    is_deleted = Column(
+        Boolean,
+        default=False,
+        nullable=False
+    )
+
     user = relationship("User", back_populates="ngo")
 
     needs = relationship(

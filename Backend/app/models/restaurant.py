@@ -1,6 +1,6 @@
 import uuid
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy import Column, Integer, String, Float, ForeignKey
+from sqlalchemy import Column, Integer, Boolean, String, Float, ForeignKey
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -22,6 +22,12 @@ class Restaurant(Base):
     latitude = Column(Float)
 
     longitude = Column(Float)
+
+    is_deleted = Column(
+        Boolean,
+        default=False,
+        nullable=False
+    )
 
     user = relationship("User", back_populates="restaurant")
 
