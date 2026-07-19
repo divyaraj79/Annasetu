@@ -18,15 +18,10 @@ class DonationCreate(BaseModel):
     cooked_at: datetime | None = None
     expiry_time: datetime
     pickup_address: str
-    latitude: float | None = None
-    longitude: float | None = None
     special_notes: str | None = None
-    status: DonationStatus | None = None
-    is_available: bool = True
 
 
 class DonationUpdate(BaseModel):
-    restaurant_id: UUID | None = None
     food_name: str | None = None
     food_category: FoodCategory | None = None
     is_vegetarian: bool | None = None
@@ -35,12 +30,7 @@ class DonationUpdate(BaseModel):
     cooked_at: datetime | None = None
     expiry_time: datetime | None = None
     pickup_address: str | None = None
-    latitude: float | None = None
-    longitude: float | None = None
     special_notes: str | None = None
-    status: DonationStatus | None = None
-    is_available: bool | None = None
-    is_deleted: bool | None = None
 
 
 class DonationResponse(BaseModel):
@@ -59,7 +49,7 @@ class DonationResponse(BaseModel):
     special_notes: str | None = None
     status: DonationStatus
     created_at: datetime | None = None
-    is_available: bool
+    updated_at: datetime | None = None
     is_deleted: bool
 
     model_config = ConfigDict(from_attributes=True)

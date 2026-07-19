@@ -1,9 +1,11 @@
 import uuid
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy import Column, Integer, Boolean, String, Float, ForeignKey
+from sqlalchemy import Column, Integer, Boolean, String, Float, ForeignKey, Enum
 from sqlalchemy.orm import relationship
 
+# from Backend.app.enums.verification_status import VerificationStatus
 from app.database import Base
+from app.enums.verification_status import VerificationStatus
 
 
 class Restaurant(Base):
@@ -15,7 +17,11 @@ class Restaurant(Base):
 
     restaurant_name = Column(String, nullable=False)
 
-    phone = Column(String, nullable=False)
+    verification_status = Column(
+        Enum(VerificationStatus),
+        default=VerificationStatus.PENDING,
+        nullable=False
+    )
 
     address = Column(String, nullable=False)
 

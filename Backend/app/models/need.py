@@ -16,6 +16,7 @@ from app.database import Base
 from app.enums.food_category import FoodCategory
 from app.enums.quantity_unit import QuantityUnit
 from app.enums.urgency import Urgency
+from app.enums.status import DonationStatus
 
 
 class Need(Base):
@@ -41,7 +42,8 @@ class Need(Base):
 
     vegetarian_only = Column(
         Boolean,
-        default=False
+        default=False,
+        nullable=False
     )
 
     quantity_required = Column(
@@ -56,13 +58,25 @@ class Need(Base):
 
     urgency = Column(
         Enum(Urgency),
-        default=Urgency.MEDIUM
+        default=Urgency.MEDIUM,
+        nullable=False
+    )
+
+    created_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now()
     )
 
     updated_at = Column(
         DateTime(timezone=True),
         server_default=func.now(),
         onupdate=func.now()
+    )
+
+    status = Column(
+        Enum(DonationStatus),
+        default=DonationStatus.CREATED,
+        nullable=False
     )
 
     is_deleted = Column(

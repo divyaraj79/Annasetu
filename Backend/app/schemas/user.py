@@ -9,15 +9,14 @@ from app.enums.roles import UserRole
 class UserCreate(BaseModel):
     name: str
     email: str
+    phone: str
     role: UserRole
-    is_active: bool = True
 
 
 class UserUpdate(BaseModel):
     name: str | None = None
     email: str | None = None
-    role: UserRole | None = None
-    is_active: bool | None = None
+    phone: str| None = None
 
 
 class UserResponse(BaseModel):
@@ -27,5 +26,6 @@ class UserResponse(BaseModel):
     role: UserRole
     is_active: bool
     created_at: datetime | None = None
+    phone: str
 
     model_config = ConfigDict(from_attributes=True)

@@ -1,10 +1,11 @@
 import uuid
 
-from sqlalchemy import Column, String, Float, Boolean, ForeignKey
+from sqlalchemy import Column, String, Float, Boolean, ForeignKey, Enum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 
 from app.database import Base
+from app.enums.verification_status import VerificationStatus
 
 
 class NGO(Base):
@@ -25,15 +26,17 @@ class NGO(Base):
 
     ngo_name = Column(String, nullable=False)
 
-    phone = Column(String, nullable=False)
-
     address = Column(String, nullable=False)
 
     latitude = Column(Float)
 
     longitude = Column(Float)
 
-    verified = Column(Boolean, default=False)
+    verification_status = Column(
+        Enum(VerificationStatus),
+        default=VerificationStatus.PENDING,
+        nullable=False
+    )
 
     is_deleted = Column(
         Boolean,

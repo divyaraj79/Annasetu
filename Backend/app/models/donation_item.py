@@ -2,9 +2,9 @@ import uuid
 
 from sqlalchemy import (
     Column,
-    Integer,
     String,
-    Float,
+    Integer,
+    Boolean,
     DateTime,
     ForeignKey,
     Enum
@@ -14,11 +14,11 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from app.database import Base
-from app.enums.status import MatchStatus
+from app.enums.quantity_unit import QuantityUnit
 
 
-class Match(Base):
-    __tablename__ = "matches"
+class DonationItem(Base):
+    __tablename__ = "donation_items"
 
     id = Column(
         UUID(as_uuid=True),
@@ -33,42 +33,36 @@ class Match(Base):
         nullable=False
     )
 
-    ngo_id = Column(
-        UUID(as_uuid=True),
-        ForeignKey("ngos.id"),
-        nullable=False
-    )
+    food_name = Column(String, nullable=False)
 
-    score = Column(Float)
-
-    distance_km = Column(Float, nullable=False)
-
-    status = Column(
-        Enum(MatchStatus),
-        default=MatchStatus.PENDING,
-        nullable=False
-    )
-
-    attempt_number = Column(
+    quantity = Column(
         Integer,
         nullable=False
     )
-    
-    matched_at = Column(
+
+    quantity_unit = Column(
+        Enum(QuantityUnit),
+        nullable=False
+    )
+
+    created_at = Column(
         DateTime(timezone=True),
         server_default=func.now()
     )
 
-    responded_at = Column(DateTime)
+    updated_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now()
+    )
 
-    match_reason = Column(String)
+    is_deleted = Column(
+        Boolean,
+        default=False,
+        nullable=False
+    )
 
     donation = relationship(
         "Donation",
-        back_populates="matches"
-    )
-
-    ngo = relationship(
-        "NGO",
-        back_populates="matches"
+        back_populates="donation_items"
     )

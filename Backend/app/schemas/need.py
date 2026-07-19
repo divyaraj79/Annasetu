@@ -6,6 +6,7 @@ from pydantic import BaseModel, ConfigDict
 from app.enums.food_category import FoodCategory
 from app.enums.quantity_unit import QuantityUnit
 from app.enums.urgency import Urgency
+from app.enums.status import DonationStatus
 
 
 class NeedCreate(BaseModel):
@@ -18,13 +19,11 @@ class NeedCreate(BaseModel):
 
 
 class NeedUpdate(BaseModel):
-    ngo_id: UUID | None = None
     preferred_category: FoodCategory | None = None
     vegetarian_only: bool | None = None
     quantity_required: int | None = None
     quantity_unit: QuantityUnit | None = None
     urgency: Urgency | None = None
-    is_deleted: bool | None = None
 
 
 class NeedResponse(BaseModel):
@@ -35,7 +34,9 @@ class NeedResponse(BaseModel):
     quantity_required: int
     quantity_unit: QuantityUnit
     urgency: Urgency
+    created_at: datetime | None = None
     updated_at: datetime | None = None
+    status: DonationStatus
     is_deleted: bool
 
     model_config = ConfigDict(from_attributes=True)

@@ -78,7 +78,8 @@ class Donation(Base):
 
     status = Column(
         Enum(DonationStatus),
-        default=DonationStatus.CREATED
+        default=DonationStatus.CREATED,
+        nullable=False
     )
 
     created_at = Column(
@@ -86,10 +87,10 @@ class Donation(Base):
         server_default=func.now()
     )
 
-    is_available = Column(
-        Boolean,
-        default=True,
-        nullable=False
+    updated_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now()
     )
 
     is_deleted = Column(
@@ -105,5 +106,10 @@ class Donation(Base):
 
     matches = relationship(
         "Match",
+        back_populates="donation"
+    )
+    
+    donation_items = relationship(
+        "DonationItem",
         back_populates="donation"
     )

@@ -3,7 +3,10 @@ from uuid import UUID
 from sqlalchemy.orm import Session
 
 from app.models.restaurant import Restaurant
+from app.models.user import User
 from app.schemas.restaurant import RestaurantCreate, RestaurantUpdate
+from app.enums.roles import UserRole
+from app.enums.verification_status import VerificationStatus
 
 
 class RestaurantService:
@@ -11,10 +14,47 @@ class RestaurantService:
         self.db = db
 
     def create(self, restaurant_data: RestaurantCreate) -> Restaurant:
-        restaurant = Restaurant(**restaurant_data.model_dump())
+        # Check if user exists
+        user = (
+            self.db.query(User)
+            .filter(User.id == restaurant_data.user_id)
+            .first()
+        )
+
+        if not user:
+            raise ValueError("User not found.")
+
+        # Check if user account is active
+        if not user.is_active:
+            raise ValueError("Inactive users cannot create a restaurant profile.")
+
+        # Check user role
+        if user.role != UserRole.RESTAURANT:
+            raise ValueError("Only restaurant users can create a restaurant profile.")
+
+        # Check if user already owns a restaurant
+        existing_restaurant = (
+            self.db.query(Restaurant)
+            .filter(Restaurant.user_id == restaurant_data.user_id)
+            .first()
+        )
+
+        if existing_restaurant:
+            raise ValueError("Restaurant profile already exists for this user.")
+
+        restaurant = Restaurant(
+            **restaurant_data.model_dump(),
+            verification_status=VerificationStatus.PENDING
+        )
+
+        # TODO:
+        # Geocode the address here and automatically populate
+        # latitude and longitude before saving.
+
         self.db.add(restaurant)
         self.db.commit()
         self.db.refresh(restaurant)
+
         return restaurant
 
     def get_by_id(self, restaurant_id: UUID) -> Restaurant | None:
@@ -23,11 +63,29 @@ class RestaurantService:
     def get_all(self) -> list[Restaurant]:
         return self.db.query(Restaurant).all()
 
-    def update(self, restaurant: Restaurant, restaurant_data: RestaurantUpdate) -> Restaurant:
-        for field, value in restaurant_data.model_dump(exclude_unset=True).items():
+    def update(
+        self,
+        restaurant: Restaurant,
+        restaurant_data: RestaurantUpdate
+        ) -> Restaurant:
+
+        # TODO:
+        # After authentication is implemented,
+        # validate that only the restaurant owner
+        # (or an admin) can update this profile.
+        #
+        # If the address changes,
+        # automatically geocode the new address
+        # and update latitude & longitude.
+
+        update_data = restaurant_data.model_dump(exclude_unset=True)
+
+        for field, value in update_data.items():
             setattr(restaurant, field, value)
+
         self.db.commit()
         self.db.refresh(restaurant)
+
         return restaurant
 
     def delete(self, restaurant: Restaurant) -> None:
