@@ -21,7 +21,27 @@ def get_db():
 @router.post("/", response_model=RestaurantResponse, status_code=status.HTTP_201_CREATED)
 def create_restaurant(restaurant: RestaurantCreate, db: Session = Depends(get_db)):
     service = RestaurantService(db)
-    return service.create(restaurant)
+    
+    try:
+        restaurant = service.create(...)
+
+        db.commit()
+
+        db.refresh(restaurant)
+
+        return restaurant
+
+    except ValueError as e:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+    except Exception:
+        db.rollback()
+        raise
 
 
 @router.get("/{restaurant_id}", response_model=RestaurantResponse)
@@ -39,13 +59,46 @@ def get_restaurants(db: Session = Depends(get_db)):
     return service.get_all()
 
 
+
 @router.put("/{restaurant_id}", response_model=RestaurantResponse)
-def update_restaurant(restaurant_id: UUID, restaurant_data: RestaurantUpdate, db: Session = Depends(get_db)):
-    service = RestaurantService(db)
-    restaurant = service.get_by_id(restaurant_id)
-    if not restaurant:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Restaurant not found")
-    return service.update(restaurant, restaurant_data)
+def update_restaurant(
+        restaurant_id: UUID,
+        restaurant_data: RestaurantUpdate,
+        db: Session = Depends(get_db)
+    ):
+        service = RestaurantService(db)
+
+        restaurant = service.get_by_id(restaurant_id)
+
+        if not restaurant:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Restaurant not found"
+            )
+
+        try:
+            updated_restaurant = service.update(
+                restaurant,
+                restaurant_data,
+            )
+
+            db.commit()
+
+            db.refresh(updated_restaurant)
+
+            return updated_restaurant
+
+        except ValueError as e:
+            db.rollback()
+
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=str(e)
+            )
+
+        except Exception:
+            db.rollback()
+            raise
 
 
 @router.delete("/{restaurant_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -54,5 +107,21 @@ def delete_restaurant(restaurant_id: UUID, db: Session = Depends(get_db)):
     restaurant = service.get_by_id(restaurant_id)
     if not restaurant:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Restaurant not found")
-    service.delete(restaurant)
+    
+    try:
+        service.delete(restaurant)
+
+        db.commit()
+    except ValueError as e:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+    except Exception:
+        db.rollback()
+        raise
+
     return None

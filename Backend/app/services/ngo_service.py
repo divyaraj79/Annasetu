@@ -52,7 +52,7 @@ class NGOService:
         # latitude and longitude before saving.
 
         self.db.add(ngo)
-        self.db.commit()
+        self.db.flush()
         self.db.refresh(ngo)
 
         return ngo
@@ -82,7 +82,7 @@ class NGOService:
         for field, value in update_data.items():
             setattr(ngo, field, value)
 
-        self.db.commit()
+        self.db.flush()
         self.db.refresh(ngo)
 
         return ngo
@@ -90,4 +90,4 @@ class NGOService:
 
     def delete(self, ngo: NGO) -> None:
         self.db.delete(ngo)
-        self.db.commit()
+        self.db.flush()

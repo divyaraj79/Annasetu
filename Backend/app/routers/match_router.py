@@ -21,7 +21,27 @@ def get_db():
 @router.post("/", response_model=MatchResponse, status_code=status.HTTP_201_CREATED)
 def create_match(match: MatchCreate, db: Session = Depends(get_db)):
     service = MatchService(db)
-    return service.create(match)
+
+    try:
+        created_match = service.create(match)
+
+        db.commit()
+
+        db.refresh(created_match)
+
+        return created_match
+
+    except ValueError as e:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+    except Exception:
+        db.rollback()
+        raise
 
 
 @router.get("/{match_id}", response_model=MatchResponse)
@@ -45,7 +65,27 @@ def update_match(match_id: UUID, match_data: MatchUpdate, db: Session = Depends(
     match = service.get_by_id(match_id)
     if not match:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Match not found")
-    return service.update(match, match_data)
+    
+    try:
+        updated_match = service.update(match, match_data)
+
+        db.commit()
+
+        db.refresh(updated_match)
+
+        return updated_match
+
+    except ValueError as e:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+    except Exception:
+        db.rollback()
+        raise
 
 
 @router.delete("/{match_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -54,5 +94,22 @@ def delete_match(match_id: UUID, db: Session = Depends(get_db)):
     match = service.get_by_id(match_id)
     if not match:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Match not found")
-    service.delete(match)
+    
+    try:
+        service.delete(match)
+
+        db.commit()
+
+    except ValueError as e:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+    except Exception:
+        db.rollback()
+        raise
+
     return None

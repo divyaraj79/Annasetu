@@ -45,7 +45,7 @@ class NeedService:
 
         self.db.add(need)
 
-        self.db.commit()
+        self.db.flush()
 
         self.db.refresh(need)
 
@@ -84,7 +84,7 @@ class NeedService:
         for field, value in update_data.items():
             setattr(need, field, value)
 
-        self.db.commit()
+        self.db.flush()
 
         self.db.refresh(need)
 
@@ -92,4 +92,4 @@ class NeedService:
 
     def delete(self, need: Need) -> None:
         self.db.delete(need)
-        self.db.commit()
+        self.db.flush()

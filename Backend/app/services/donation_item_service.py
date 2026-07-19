@@ -74,7 +74,7 @@ class DonationItemService:
 
         self.db.add(donation_item)
 
-        self.db.commit()
+        self.db.flush()
 
         self.db.refresh(donation_item)
 
@@ -160,7 +160,7 @@ class DonationItemService:
         for field, value in update_data.items():
             setattr(donation_item, field, value)
 
-        self.db.commit()
+        self.db.flush()
 
         self.db.refresh(donation_item)
 
@@ -168,4 +168,4 @@ class DonationItemService:
 
     def delete(self, donation_item: DonationItem) -> None:
         self.db.delete(donation_item)
-        self.db.commit()
+        self.db.flush()

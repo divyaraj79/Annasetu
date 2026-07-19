@@ -14,7 +14,7 @@ class UserService:
     # def create(self, user_data: UserCreate) -> User:
     #     user = User(**user_data.model_dump())
     #     self.db.add(user)
-    #     self.db.commit()
+    #     self.db.flush()
     #     self.db.refresh(user)
     #     return user
 
@@ -38,7 +38,7 @@ class UserService:
 
         self.db.add(user)
 
-        self.db.commit()
+        self.db.flush()
 
         self.db.refresh(user)
 
@@ -84,7 +84,7 @@ class UserService:
         for field, value in update_data.items():
             setattr(user, field, value)
 
-        self.db.commit()
+        self.db.flush()
 
         self.db.refresh(user)
 
@@ -93,4 +93,4 @@ class UserService:
 
     def delete(self, user: User) -> None:
         self.db.delete(user)
-        self.db.commit()
+        self.db.flush()

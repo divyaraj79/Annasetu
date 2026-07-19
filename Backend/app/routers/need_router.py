@@ -21,7 +21,27 @@ def get_db():
 @router.post("/", response_model=NeedResponse, status_code=status.HTTP_201_CREATED)
 def create_need(need: NeedCreate, db: Session = Depends(get_db)):
     service = NeedService(db)
-    return service.create(need)
+
+    try:
+        need = service.create(need)
+
+        db.commit()
+
+        db.refresh(need)
+
+        return need
+
+    except ValueError as e:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+    except Exception:
+        db.rollback()
+        raise
 
 
 @router.get("/{need_id}", response_model=NeedResponse)
@@ -45,7 +65,27 @@ def update_need(need_id: UUID, need_data: NeedUpdate, db: Session = Depends(get_
     need = service.get_by_id(need_id)
     if not need:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Need not found")
-    return service.update(need, need_data)
+    
+    try:
+        updated_need = service.update(need, need_data)
+
+        db.commit()
+
+        db.refresh(updated_need)
+
+        return updated_need
+
+    except ValueError as e:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+    except Exception:
+        db.rollback()
+        raise
 
 
 @router.delete("/{need_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -54,5 +94,22 @@ def delete_need(need_id: UUID, db: Session = Depends(get_db)):
     need = service.get_by_id(need_id)
     if not need:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Need not found")
-    service.delete(need)
+    
+    try:
+        service.delete(need)
+        db.commit()
+
+
+    except ValueError as e:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+    except Exception:
+        db.rollback()
+        raise
+
     return None

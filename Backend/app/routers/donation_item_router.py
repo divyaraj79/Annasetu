@@ -28,7 +28,27 @@ def create_donation_item(
     db: Session = Depends(get_db)
 ):
     service = DonationItemService(db)
-    return service.create(donation_item)
+
+    try:
+        created_donation_item = service.create(donation_item)
+
+        db.commit()
+
+        db.refresh(created_donation_item)
+
+        return created_donation_item
+
+    except ValueError as e:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+    except Exception:
+        db.rollback()
+        raise
 
 
 @router.get("/{donation_item_id}", response_model=DonationItemResponse)
@@ -56,7 +76,27 @@ def update_donation_item(
     donation_item = service.get_by_id(donation_item_id)
     if not donation_item:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Donation item not found")
-    return service.update(donation_item, donation_item_data)
+    
+    try:
+        updated_donation_item = service.update(donation_item, donation_item_data)
+
+        db.commit()
+
+        db.refresh(updated_donation_item)
+
+        return updated_donation_item
+
+    except ValueError as e:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+    except Exception:
+        db.rollback()
+        raise
 
 
 @router.delete("/{donation_item_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -65,5 +105,22 @@ def delete_donation_item(donation_item_id: UUID, db: Session = Depends(get_db)):
     donation_item = service.get_by_id(donation_item_id)
     if not donation_item:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Donation item not found")
-    service.delete(donation_item)
+    
+    try:
+        service.delete(donation_item)
+
+        db.commit()
+
+    except ValueError as e:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+    except Exception:
+        db.rollback()
+        raise
+    
     return None

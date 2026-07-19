@@ -21,7 +21,27 @@ def get_db():
 @router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 def create_user(user: UserCreate, db: Session = Depends(get_db)):
     service = UserService(db)
-    return service.create(user)
+
+    try:
+        created_user = service.create(user)
+
+        db.commit()
+
+        db.refresh(created_user)
+
+        return created_user
+
+    except ValueError as e:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+    except Exception:
+        db.rollback()
+        raise
 
 
 @router.get("/{user_id}", response_model=UserResponse)
@@ -45,7 +65,27 @@ def update_user(user_id: UUID, user_data: UserUpdate, db: Session = Depends(get_
     user = service.get_by_id(user_id)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    return service.update(user, user_data)
+    
+    try:
+        updated_user = service.update(user, user_data)
+
+        db.commit()
+
+        db.refresh(updated_user)
+
+        return updated_user
+
+    except ValueError as e:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+    except Exception:
+        db.rollback()
+        raise
 
 
 @router.delete("/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -54,5 +94,22 @@ def delete_user(user_id: UUID, db: Session = Depends(get_db)):
     user = service.get_by_id(user_id)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    service.delete(user)
+    
+    try:
+        service.delete(user)
+
+        db.commit()
+
+    except ValueError as e:
+        db.rollback()
+
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+
+    except Exception:
+        db.rollback()
+        raise
+
     return None

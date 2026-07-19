@@ -88,7 +88,7 @@ class MatchService:
 
         self.db.add(match)
 
-        self.db.commit()
+        self.db.flush()
 
         self.db.refresh(match)
 
@@ -125,7 +125,7 @@ class MatchService:
         for field, value in update_data.items():
             setattr(match, field, value)
 
-        self.db.commit()
+        self.db.flush()
 
         self.db.refresh(match)
 
@@ -133,4 +133,4 @@ class MatchService:
 
     def delete(self, match: Match) -> None:
         self.db.delete(match)
-        self.db.commit()
+        self.db.flush()

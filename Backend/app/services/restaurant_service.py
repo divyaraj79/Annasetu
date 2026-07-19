@@ -52,7 +52,7 @@ class RestaurantService:
         # latitude and longitude before saving.
 
         self.db.add(restaurant)
-        self.db.commit()
+        self.db.flush()
         self.db.refresh(restaurant)
 
         return restaurant
@@ -83,11 +83,11 @@ class RestaurantService:
         for field, value in update_data.items():
             setattr(restaurant, field, value)
 
-        self.db.commit()
+        self.db.flush()
         self.db.refresh(restaurant)
 
         return restaurant
 
     def delete(self, restaurant: Restaurant) -> None:
         self.db.delete(restaurant)
-        self.db.commit()
+        self.db.flush()
