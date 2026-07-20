@@ -1,5 +1,5 @@
 from uuid import UUID
-from datetime import timedelta
+from datetime import timedelta, datetime, timezone
 
 from sqlalchemy.orm import Session
 
@@ -36,8 +36,13 @@ class DonationService:
         # Quantity validation
         if donation_data.quantity <= 0:
             raise ValueError("Quantity must be greater than zero.")
-
+        
         # Expiry validation
+        if donation_data.expiry_time <= datetime.now(timezone.utc):
+            raise ValueError(
+                "Expiry time must be in the future."
+            )
+
         if donation_data.cooked_at:
 
             if donation_data.expiry_time <= donation_data.cooked_at:
@@ -70,20 +75,46 @@ class DonationService:
         return donation
 
     def get_by_id(self, donation_id: UUID) -> Donation | None:
-        return self.db.query(Donation).filter(Donation.id == donation_id).first()
+        return (
+            self.db.query(Donation)
+            .filter(
+                Donation.id == donation_id,
+                Donation.is_deleted == False,
+            )
+            .first()
+        )
 
     def get_all(self) -> list[Donation]:
-        return self.db.query(Donation).all()
+        return (
+            self.db.query(Donation)
+            .filter(Donation.is_deleted == False)
+            .all()
+        )
 
     def update(
         self,
         donation: Donation,
         donation_data: DonationUpdate,
     ) -> Donation:
+        
+        if donation.is_deleted:
+            raise ValueError(
+                "Deleted donations cannot be updated."
+            )
 
         # Do not allow completed donations to be modified
         if donation.status == DonationStatus.COMPLETED:
             raise ValueError("Completed donations cannot be updated.")
+        
+        if donation.status == DonationStatus.CANCELLED:
+            raise ValueError(
+                "Cancelled donations cannot be updated."
+            )
+
+        if donation.status == DonationStatus.EXPIRED:
+            raise ValueError(
+                "Expired donations cannot be updated."
+            )
 
         update_data = donation_data.model_dump(exclude_unset=True)
 
@@ -98,6 +129,11 @@ class DonationService:
         cooked_at = update_data.get("cooked_at", donation.cooked_at)
         expiry_time = update_data.get("expiry_time", donation.expiry_time)
 
+        if expiry_time <= datetime.now(timezone.utc):
+            raise ValueError(
+                "Expiry time must be in the future."
+            )
+
         if cooked_at is not None and expiry_time is not None:
             if expiry_time <= cooked_at:
                 raise ValueError(
@@ -108,6 +144,8 @@ class DonationService:
                 raise ValueError(
                     "Maximum food life cannot exceed 10 hours."
                 )
+            
+        
 
         # TODO:
         # After authentication is implemented,
@@ -127,6 +165,18 @@ class DonationService:
 
         return donation
 
-    def delete(self, donation: Donation) -> None:
-        self.db.delete(donation)
+    def delete(
+        self,
+        donation: Donation,
+    ) -> None:
+
+        if donation.is_deleted:
+            raise ValueError(
+                "Donation is already deleted."
+            )
+
+        donation.is_deleted = True
+
         self.db.flush()
+
+        self.db.refresh(donation)

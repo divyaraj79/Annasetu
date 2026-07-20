@@ -2,6 +2,7 @@ import uuid
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy import Column, Integer, Boolean, String, Float, ForeignKey, Enum
 from sqlalchemy.orm import relationship
+from sqlalchemy import UniqueConstraint
 
 # from Backend.app.enums.verification_status import VerificationStatus
 from app.database import Base
@@ -10,6 +11,13 @@ from app.enums.verification_status import VerificationStatus
 
 class Restaurant(Base):
     __tablename__ = "restaurants"
+
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id",
+            name="uq_restaurant_user_id",
+        ),
+    )
 
     id = Column( UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, index=True)
 

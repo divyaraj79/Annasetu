@@ -7,8 +7,10 @@ from sqlalchemy import (
     Float,
     DateTime,
     ForeignKey,
-    Enum
+    Enum,
+    Boolean
 )
+from sqlalchemy import UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -19,6 +21,14 @@ from app.enums.status import MatchStatus
 
 class Match(Base):
     __tablename__ = "matches"
+
+    __table_args__ = (
+        UniqueConstraint(
+            "donation_id",
+            "ngo_id",
+            name="uq_match_donation_ngo",
+        ),
+    )
 
     id = Column(
         UUID(as_uuid=True),
@@ -59,9 +69,15 @@ class Match(Base):
         server_default=func.now()
     )
 
-    responded_at = Column(DateTime)
+    responded_at = Column(DateTime(timezone=True))
 
     match_reason = Column(String)
+
+    is_deleted = Column(
+        Boolean,
+        default=False,
+        nullable=False
+    )
 
     donation = relationship(
         "Donation",

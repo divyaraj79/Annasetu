@@ -9,6 +9,7 @@ from sqlalchemy import (
     ForeignKey,
     Enum
 )
+from sqlalchemy import UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -19,6 +20,14 @@ from app.enums.quantity_unit import QuantityUnit
 
 class DonationItem(Base):
     __tablename__ = "donation_items"
+
+    __table_args__ = (
+        UniqueConstraint(
+            "donation_id",
+            "food_name",
+            name="uq_donation_item_food_name",
+        ),
+    )
 
     id = Column(
         UUID(as_uuid=True),

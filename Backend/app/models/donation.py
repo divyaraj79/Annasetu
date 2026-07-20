@@ -58,11 +58,13 @@ class Donation(Base):
         nullable=False
     )
 
-    cooked_at = Column(DateTime)
+    cooked_at = Column(
+        DateTime(timezone=True)
+    )
 
     expiry_time = Column(
-        DateTime,
-        nullable=False
+        DateTime(timezone=True),
+        nullable=False,
     )
 
     pickup_address = Column(

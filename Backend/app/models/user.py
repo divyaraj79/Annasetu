@@ -29,6 +29,12 @@ class User(Base):
 
     restaurant = relationship("Restaurant", back_populates="user", uselist=False)
 
+    is_deleted = Column(
+        Boolean,
+        default=False,
+        nullable=False
+    )
+
     ngo = relationship(
         "NGO",
         back_populates="user",

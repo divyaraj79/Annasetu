@@ -45,12 +45,28 @@ class UserService:
         return user
 
     def get_by_id(self, user_id: UUID) -> User | None:
-        return self.db.query(User).filter(User.id == user_id).first()
+        return (
+            self.db.query(User)
+            .filter(
+                User.id == user_id,
+                User.is_deleted == False,
+            )
+            .first()
+        )
 
     def get_all(self) -> list[User]:
-        return self.db.query(User).all()
+        return (
+            self.db.query(User)
+            .filter(User.is_deleted == False)
+            .all()
+        )
 
     def update(self, user: User, user_data: UserUpdate) -> User:
+        if user.is_deleted:
+            raise ValueError(
+                "Deleted users cannot be updated."
+            )
+        
         update_data = user_data.model_dump(exclude_unset=True)
 
         if "email" in update_data:
@@ -90,7 +106,18 @@ class UserService:
 
         return user
 
+    def delete(
+        self,
+        user: User,
+    ) -> None:
 
-    def delete(self, user: User) -> None:
-        self.db.delete(user)
+        if user.is_deleted:
+            raise ValueError(
+                "User is already deleted."
+            )
+
+        user.is_deleted = True
+
         self.db.flush()
+
+        self.db.refresh(user)

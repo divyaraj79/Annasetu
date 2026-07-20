@@ -24,6 +24,9 @@ class RestaurantService:
         if not user:
             raise ValueError("User not found.")
 
+        if user.is_deleted:
+            raise ValueError("User has been deleted!")
+
         # Check if user account is active
         if not user.is_active:
             raise ValueError("Inactive users cannot create a restaurant profile.")
@@ -57,11 +60,22 @@ class RestaurantService:
 
         return restaurant
 
-    def get_by_id(self, restaurant_id: UUID) -> Restaurant | None:
-        return self.db.query(Restaurant).filter(Restaurant.id == restaurant_id).first()
+    def get_by_id(self, restaurant_id: UUID) -> Restaurant | None:    
+        return (
+            self.db.query(Restaurant)
+            .filter(
+                Restaurant.id == restaurant_id,
+                Restaurant.is_deleted == False,
+            )
+            .first()
+        )
 
     def get_all(self) -> list[Restaurant]:
-        return self.db.query(Restaurant).all()
+        return (
+            self.db.query(Restaurant)
+            .filter(Restaurant.is_deleted == False)
+            .all()
+        )
 
     def update(
         self,
@@ -78,6 +92,11 @@ class RestaurantService:
         # automatically geocode the new address
         # and update latitude & longitude.
 
+        if restaurant.is_deleted:
+            raise ValueError(
+                "Deleted restaurants cannot be updated."
+            )
+
         update_data = restaurant_data.model_dump(exclude_unset=True)
 
         for field, value in update_data.items():
@@ -88,6 +107,18 @@ class RestaurantService:
 
         return restaurant
 
-    def delete(self, restaurant: Restaurant) -> None:
-        self.db.delete(restaurant)
+    def delete(
+        self,
+        restaurant: Restaurant,
+    ) -> None:
+
+        if restaurant.is_deleted:
+            raise ValueError(
+                "Restaurant is already deleted."
+            )
+
+        restaurant.is_deleted = True
+
         self.db.flush()
+
+        self.db.refresh(restaurant)

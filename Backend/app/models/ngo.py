@@ -3,6 +3,7 @@ import uuid
 from sqlalchemy import Column, String, Float, Boolean, ForeignKey, Enum
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
+from sqlalchemy import UniqueConstraint
 
 from app.database import Base
 from app.enums.verification_status import VerificationStatus
@@ -10,6 +11,13 @@ from app.enums.verification_status import VerificationStatus
 
 class NGO(Base):
     __tablename__ = "ngos"
+
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id",
+            name="uq_ngo_user_id",
+        ),
+    )
 
     id = Column(
         UUID(as_uuid=True),

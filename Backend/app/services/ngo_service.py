@@ -23,6 +23,9 @@ class NGOService:
 
         if not user:
             raise ValueError("User not found.")
+        
+        if user.is_deleted:
+            raise ValueError("User has been deleted.")
 
         # Check if user account is active
         if not user.is_active:
@@ -58,11 +61,22 @@ class NGOService:
         return ngo
 
     def get_by_id(self, ngo_id: UUID) -> NGO | None:
-        return self.db.query(NGO).filter(NGO.id == ngo_id).first()
+        return (
+            self.db.query(NGO)
+            .filter(
+                NGO.id == ngo_id,
+                NGO.is_deleted == False,
+            )
+            .first()
+        )
 
     def get_all(self) -> list[NGO]:
-        return self.db.query(NGO).all()
-
+        return (
+            self.db.query(NGO)
+            .filter(NGO.is_deleted == False)
+            .all()
+        )
+    
     def update(
         self,
         ngo: NGO,
@@ -77,6 +91,11 @@ class NGOService:
         # automatically geocode the new address
         # and update latitude & longitude.
 
+        if ngo.is_deleted:
+            raise ValueError(
+                "Deleted NGOs cannot be updated."
+            )
+
         update_data = ngo_data.model_dump(exclude_unset=True)
 
         for field, value in update_data.items():
@@ -88,6 +107,19 @@ class NGOService:
         return ngo
         
 
-    def delete(self, ngo: NGO) -> None:
-        self.db.delete(ngo)
+
+    def delete(
+        self,
+        ngo: NGO,
+    ) -> None:
+
+        if ngo.is_deleted:
+            raise ValueError(
+                "NGO is already deleted."
+            )
+
+        ngo.is_deleted = True
+
         self.db.flush()
+
+        self.db.refresh(ngo)

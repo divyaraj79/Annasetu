@@ -45,7 +45,8 @@ class DonationItemService:
             raise ValueError("Quantity must be greater than zero.")
         
         # Food name empty space removal
-        food_name = donation_item_data.food_name.strip()
+        original_food_name = donation_item_data.food_name
+        food_name = donation_item_data.food_name.strip().lower()
 
         if not food_name:
             raise ValueError("Food name cannot be empty.")
@@ -57,15 +58,14 @@ class DonationItemService:
             self.db.query(DonationItem)
             .filter(
                 DonationItem.donation_id == donation_item_data.donation_id,
-                func.lower(DonationItem.food_name)
-                == donation_item_data.food_name.lower(),
+                DonationItem.food_name == donation_item_data.food_name,
             )
             .first()
         )
 
         if existing_item:
             raise ValueError(
-                f'"{donation_item_data.food_name}" already exists for this donation.'
+                f'"{original_food_name.strip()}" already exists for this donation.'
             )
 
         donation_item = DonationItem(
@@ -83,19 +83,31 @@ class DonationItemService:
     def get_by_id(self, donation_item_id: UUID) -> DonationItem | None:
         return (
             self.db.query(DonationItem)
-            .filter(DonationItem.id == donation_item_id)
+            .filter(
+                DonationItem.id == donation_item_id,
+                DonationItem.is_deleted == False,
+            )
             .first()
         )
 
     def get_all(self) -> list[DonationItem]:
-        return self.db.query(DonationItem).all()
+        return (
+            self.db.query(DonationItem)
+            .filter(DonationItem.is_deleted == False)
+            .all()
+        )
 
     def update(
         self,
         donation_item: DonationItem,
         donation_item_data: DonationItemUpdate,
     ) -> DonationItem:
-
+        
+        if donation_item.is_deleted:
+            raise ValueError(
+                "Deleted donation items cannot be updated."
+            )
+        
         # Check Donation exists
         donation = (
             self.db.query(Donation)
@@ -128,7 +140,8 @@ class DonationItemService:
         update_data = donation_item_data.model_dump(exclude_unset=True)
 
         if "food_name" in update_data:
-            food_name = update_data["food_name"].strip()
+            original_food_name = donation_item_data.food_name
+            food_name = update_data["food_name"].strip().lower()
 
             if not food_name:
                 raise ValueError("Food name cannot be empty.")
@@ -137,7 +150,7 @@ class DonationItemService:
                 self.db.query(DonationItem)
                 .filter(
                     DonationItem.donation_id == donation_item.donation_id,
-                    func.lower(DonationItem.food_name) == food_name.lower(),
+                    DonationItem.food_name == food_name,
                     DonationItem.id != donation_item.id,
                 )
                 .first()
@@ -145,7 +158,7 @@ class DonationItemService:
 
             if existing_item:
                 raise ValueError(
-                    f'"{food_name}" already exists for this donation.'
+                    f'"{original_food_name.strip()}" already exists for this donation.'
                 )
 
             update_data["food_name"] = food_name
@@ -166,6 +179,18 @@ class DonationItemService:
 
         return donation_item
 
-    def delete(self, donation_item: DonationItem) -> None:
-        self.db.delete(donation_item)
+    def delete(
+        self,
+        donation_item: DonationItem,
+    ) -> None:
+
+        if donation_item.is_deleted:
+            raise ValueError(
+                "Donation item is already deleted."
+            )
+
+        donation_item.is_deleted = True
+
         self.db.flush()
+
+        self.db.refresh(donation_item)

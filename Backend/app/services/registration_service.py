@@ -16,9 +16,16 @@ class RegistrationService:
         self.db = db
 
     def register(self, registration_data: RegistrationRequest):
-        hashed_password = hash_password(registration_data.password)
+        if registration_data.role == UserRole.ADMIN:
+            raise ValueError(
+                "Admin registration is not allowed."
+            )
+        
+        hashed_password = hash_password(
+            registration_data.password
+        )
+
         user_service = UserService(self.db)
-        user = None
 
         try:
             user = user_service.create(
@@ -31,8 +38,6 @@ class RegistrationService:
             )
 
             user.password_hash = hashed_password
-            self.db.commit()
-            self.db.refresh(user)
 
             if registration_data.role == UserRole.RESTAURANT:
                 RestaurantService(self.db).create(
@@ -43,7 +48,7 @@ class RegistrationService:
                     )
                 )
 
-            if registration_data.role == UserRole.NGO:
+            elif registration_data.role == UserRole.NGO:
                 NGOService(self.db).create(
                     NGOCreate(
                         user_id=user.id,
@@ -52,12 +57,12 @@ class RegistrationService:
                     )
                 )
 
+            self.db.commit()
+
+            self.db.refresh(user)
+
             return user
 
         except Exception:
             self.db.rollback()
-
-            if user:
-                user_service.delete(user)
-
             raise

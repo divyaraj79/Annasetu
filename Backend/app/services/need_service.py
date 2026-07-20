@@ -52,16 +52,32 @@ class NeedService:
         return need
 
     def get_by_id(self, need_id: UUID) -> Need | None:
-        return self.db.query(Need).filter(Need.id == need_id).first()
+        return (
+            self.db.query(Need)
+            .filter(
+                Need.id == need_id,
+                Need.is_deleted == False,
+            )
+            .first()
+        )
 
     def get_all(self) -> list[Need]:
-        return self.db.query(Need).all()
+        return (
+            self.db.query(Need)
+            .filter(Need.is_deleted == False)
+            .all()
+        )
 
     def update(
         self,
         need: Need,
         need_data: NeedUpdate,
     ) -> Need:
+        
+        if need.is_deleted:
+            raise ValueError(
+                "Deleted needs cannot be updated."
+            )
 
         # Completed needs cannot be modified
         if need.status == DonationStatus.COMPLETED:
@@ -90,6 +106,18 @@ class NeedService:
 
         return need
 
-    def delete(self, need: Need) -> None:
-        self.db.delete(need)
+    def delete(
+        self,
+        need: Need,
+    ) -> None:
+
+        if need.is_deleted:
+            raise ValueError(
+                "Need is already deleted."
+            )
+
+        need.is_deleted = True
+
         self.db.flush()
+
+        self.db.refresh(need)

@@ -25,6 +25,9 @@ class MatchService:
 
         if not donation:
             raise ValueError("Donation not found.")
+        
+        if donation.is_deleted:
+            raise ValueError("Donation has been deleted.")
 
         # Donation should not be completed
         if donation.status == DonationStatus.COMPLETED:
@@ -97,20 +100,42 @@ class MatchService:
     def get_by_id(self, match_id: UUID) -> Match | None:
         return (
             self.db.query(Match)
-            .filter(Match.id == match_id)
+            .filter(
+                Match.id == match_id,
+                Match.is_deleted == False,
+            )
             .first()
         )
 
     def get_all(self) -> list[Match]:
-        return self.db.query(Match).all()
+        return (
+            self.db.query(Match)
+            .filter(Match.is_deleted == False)
+            .all()
+        )
 
     def update(
         self,
         match: Match,
         match_data: MatchUpdate,
     ) -> Match:
+        
+        if match.is_deleted:
+            raise ValueError(
+                "Deleted matches cannot be updated."
+            )
 
         update_data = match_data.model_dump(exclude_unset=True)
+
+        if "status" in update_data:
+            raise ValueError(
+                "Match status can only be changed through workflow actions."
+            )
+        
+        # TODO:
+        # Replace this restriction with a proper
+        # workflow/state machine when the
+        # automation engine is implemented.
 
         # Completed matches cannot be modified
         if match.status == MatchStatus.COMPLETED:
@@ -131,6 +156,18 @@ class MatchService:
 
         return match
 
-    def delete(self, match: Match) -> None:
-        self.db.delete(match)
+    def delete(
+        self,
+        match: Match,
+    ) -> None:
+
+        if match.is_deleted:
+            raise ValueError(
+                "Match is already deleted."
+            )
+
+        match.is_deleted = True
+
         self.db.flush()
+
+        self.db.refresh(match)
