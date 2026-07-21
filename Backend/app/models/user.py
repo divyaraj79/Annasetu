@@ -19,7 +19,7 @@ class User(Base):
 
     phone = Column(String, nullable=False, unique=True, index=True)
 
-    password_hash = Column(String, nullable=True)
+    password_hash = Column(String, nullable=False)
 
     role = Column(Enum(UserRole), nullable=False)
 

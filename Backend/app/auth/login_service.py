@@ -29,6 +29,9 @@ class LoginService:
         if not user:
             raise ValueError("Invalid email or password.")
         
+        if not user.password_hash:
+            raise ValueError("Invalid email or password.")
+        
         if user.is_deleted:
             raise ValueError(
                 "Invalid email or password."

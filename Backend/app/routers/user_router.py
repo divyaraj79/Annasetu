@@ -17,36 +17,38 @@ from app.models.user import User
 
 router = APIRouter(prefix="/users", tags=["users"])
 
-@router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-def create_user(
-    user: UserCreate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(
-        require_role(UserRole.ADMIN)
-    ),
-):
-    service = UserService(db)
 
-    try:
-        created_user = service.create(user)
+# I am tuning it of as there should be only one way to create user and that is registration service
+# @router.post("/", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+# def create_user(
+#     user: UserCreate,
+#     db: Session = Depends(get_db),
+#     current_user: User = Depends(
+#         require_role(UserRole.ADMIN)
+#     ),
+# ):
+#     service = UserService(db)
 
-        db.commit()
+#     try:
+#         created_user = service.create(user)
 
-        db.refresh(created_user)
+#         db.commit()
 
-        return created_user
+#         db.refresh(created_user)
 
-    except ValueError as e:
-        db.rollback()
+#         return created_user
 
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(e)
-        )
+#     except ValueError as e:
+#         db.rollback()
 
-    except Exception:
-        db.rollback()
-        raise
+#         raise HTTPException(
+#             status_code=status.HTTP_400_BAD_REQUEST,
+#             detail=str(e)
+#         )
+
+#     except Exception:
+#         db.rollback()
+#         raise
 
 
 @router.get("/{user_id}", response_model=UserResponse)
