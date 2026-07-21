@@ -106,6 +106,16 @@ class RestaurantService:
         self.db.refresh(restaurant)
 
         return restaurant
+    
+    def get_pending(self) -> list[Restaurant]:
+        return (
+            self.db.query(Restaurant)
+            .filter(
+                Restaurant.is_deleted == False,
+                Restaurant.verification_status == VerificationStatus.PENDING,
+            )
+            .all()
+        )
 
     def delete(
         self,
@@ -118,6 +128,16 @@ class RestaurantService:
             )
 
         restaurant.is_deleted = True
+        restaurant.user.is_deleted = True
+
+        for donation in restaurant.donations:
+            donation.is_deleted = True
+
+            for donation_item in donation.donation_items:
+                donation_item.is_deleted = True
+
+            for match in donation.matches:
+                match.is_deleted = True
 
         self.db.flush()
 

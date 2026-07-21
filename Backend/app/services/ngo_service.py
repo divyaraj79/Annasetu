@@ -105,7 +105,16 @@ class NGOService:
         self.db.refresh(ngo)
 
         return ngo
-        
+
+    def get_pending(self) -> list[NGO]:
+        return (
+            self.db.query(NGO)
+            .filter(
+                NGO.is_deleted == False,
+                NGO.verification_status == VerificationStatus.PENDING,
+            )
+            .all()
+        ) 
 
 
     def delete(
@@ -119,6 +128,13 @@ class NGOService:
             )
 
         ngo.is_deleted = True
+        ngo.user.is_deleted = True
+
+        for need in ngo.needs:
+            need.is_deleted = True
+
+        for match in ngo.matches:
+            match.is_deleted = True
 
         self.db.flush()
 

@@ -177,6 +177,12 @@ class DonationService:
 
         donation.is_deleted = True
 
+        for item in donation.donation_items:
+            item.is_deleted = True
+
+        for match in donation.matches:
+            match.is_deleted = True
+
         self.db.flush()
 
         self.db.refresh(donation)
