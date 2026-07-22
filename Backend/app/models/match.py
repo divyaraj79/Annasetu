@@ -69,6 +69,10 @@ class Match(Base):
         server_default=func.now()
     )
 
+    notified_at = Column(
+        DateTime(timezone=True)
+    )
+
     responded_at = Column(DateTime(timezone=True))
 
     match_reason = Column(String)

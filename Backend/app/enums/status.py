@@ -5,6 +5,7 @@ class DonationStatus(str, Enum):
     CREATED = "created"
     MATCHING = "matching"
     PENDING = "pending"
+    UNMATCHED = "unmatched"
     ACCEPTED = "accepted"
     # PICKED_UP = "picked_up"
     COMPLETED = "completed"
@@ -14,8 +15,7 @@ class DonationStatus(str, Enum):
 
 class MatchStatus(str, Enum):
     PENDING = "pending"
-    INTERESTED = "interested"
+    NOTIFIED = "notified"
     ACCEPTED = "accepted"
-    REJECTED = "rejected"
+    DECLINED = "declined"
     COMPLETED = "completed"
-    # TIMEOUT = "timeout"

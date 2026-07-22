@@ -16,6 +16,7 @@ class UserCreate(BaseModel):
     email: EmailStr
     phone: str
     role: UserRole
+    password_hash: str
 
     @field_validator("name")
     @classmethod

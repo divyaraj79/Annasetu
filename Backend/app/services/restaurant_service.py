@@ -69,6 +69,24 @@ class RestaurantService:
             )
             .first()
         )
+    
+    def get_by_email(
+        self,
+        email: str,
+    ) -> Restaurant | None:
+
+        return (
+            self.db.query(Restaurant)
+            .join(User)
+            .filter(
+                User.email == email,
+                User.is_deleted == False,
+                Restaurant.is_deleted == False,
+                Restaurant.verification_status
+                == VerificationStatus.APPROVED,
+            )
+            .first()
+        )
 
     def get_all(self) -> list[Restaurant]:
         return (

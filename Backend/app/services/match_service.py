@@ -2,6 +2,8 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
+from datetime import datetime, timezone
+
 from app.models.match import Match
 from app.models.donation import Donation
 from app.models.ngo import NGO
@@ -15,7 +17,7 @@ class MatchService:
     def __init__(self, db: Session):
         self.db = db
 
-    def create(self, match_data: MatchCreate) -> Match:
+    def create(self, match_data: MatchCreate, score: float | None = None, attempt_number: int = 1) -> Match:
         # Check Donation exists
         donation = (
             self.db.query(Donation)
@@ -82,10 +84,11 @@ class MatchService:
         match = Match(
             donation_id=match_data.donation_id,
             ngo_id=match_data.ngo_id,
-            score=None,
+            score=score,
             distance_km=distance_km,
             status=MatchStatus.PENDING,
-            attempt_number=1,
+            notified_at = None,
+            attempt_number=attempt_number,
             match_reason=None,
         )
 
@@ -171,3 +174,109 @@ class MatchService:
         self.db.flush()
 
         self.db.refresh(match)
+
+    # --------------------------------------------------
+    # Workflow Actions
+    # --------------------------------------------------
+
+    def mark_as_notified(
+        self,
+        match: Match,
+    ) -> Match:
+
+        if match.is_deleted:
+            raise ValueError(
+                "Deleted matches cannot be notified."
+            )
+
+        if match.status != MatchStatus.PENDING:
+            raise ValueError(
+                "Only pending matches can be notified."
+            )
+
+        match.status = MatchStatus.NOTIFIED
+        match.notified_at = datetime.now(timezone.utc)
+
+        self.db.flush()
+        self.db.refresh(match)
+
+        return match
+
+    def mark_as_accepted(
+        self,
+        match: Match,
+    ) -> Match:
+
+        if match.is_deleted:
+            raise ValueError(
+                "Deleted matches cannot be accepted."
+            )
+
+        if match.status != MatchStatus.NOTIFIED:
+            raise ValueError(
+                "Only notified matches can be accepted."
+            )
+
+        match.status = MatchStatus.ACCEPTED
+        match.responded_at = datetime.now(timezone.utc)
+
+        self.db.flush()
+        self.db.refresh(match)
+
+        return match
+
+    def mark_as_declined(
+        self,
+        match: Match,
+        reason: str | None,
+    ) -> Match:
+
+        if match.is_deleted:
+            raise ValueError(
+                "Deleted matches cannot be declined."
+            )
+
+        if match.status != MatchStatus.NOTIFIED:
+            raise ValueError(
+                "Only notified matches can be declined."
+            )
+
+        if reason is None:
+            reason = "No reason provided."
+
+        else:
+            reason = reason.strip()
+            if not reason:
+                reason = "No reason provided."
+
+        match.status = MatchStatus.DECLINED
+        match.responded_at = datetime.now(timezone.utc)
+        match.match_reason = reason
+        match.is_deleted = True
+
+        self.db.flush()
+        self.db.refresh(match)
+
+        return match
+
+    def mark_as_completed(
+        self,
+        match: Match,
+    ) -> Match:
+
+        if match.is_deleted:
+            raise ValueError(
+                "Deleted matches cannot be completed."
+            )
+
+        if match.status != MatchStatus.ACCEPTED:
+            raise ValueError(
+                "Only accepted matches can be completed."
+            )
+
+        match.status = MatchStatus.COMPLETED
+
+        self.db.flush()
+        self.db.refresh(match)
+
+        return match

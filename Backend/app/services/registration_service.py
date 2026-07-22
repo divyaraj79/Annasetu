@@ -16,10 +16,13 @@ from app.models.ngo import NGO
 
 from uuid import UUID
 
+from app.automation.email_service import EmailService
+
 
 class RegistrationService:
     def __init__(self, db: Session):
         self.db = db
+        self.email_service = EmailService()
 
     def register(self, registration_data: RegistrationRequest):
         user_service = UserService(self.db)
@@ -44,10 +47,9 @@ class RegistrationService:
                     email=registration_data.email,
                     phone=registration_data.phone,
                     role=registration_data.role,
+                    password_hash=hashed_password,
                 )
             )
-
-            user.password_hash = hashed_password
 
             if registration_data.role == UserRole.RESTAURANT:
                 restaurant_service.create(
@@ -104,6 +106,10 @@ class RegistrationService:
         try:
             restaurant.verification_status = VerificationStatus.APPROVED
 
+            self.email_service.send_restaurant_registration_approval()(
+                restaurant,
+            )
+
             self.db.commit()
             self.db.refresh(restaurant)
 
@@ -129,6 +135,10 @@ class RegistrationService:
 
         try:
             ngo.verification_status = VerificationStatus.APPROVED
+
+            self.email_service.send_ngo_registration_approval(
+                ngo,
+            )
 
             self.db.commit()
             self.db.refresh(ngo)

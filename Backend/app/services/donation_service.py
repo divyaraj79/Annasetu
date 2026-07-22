@@ -165,6 +165,28 @@ class DonationService:
 
         return donation
 
+    def mark_as_unmatched(
+        self,
+        donation: Donation,
+    ) -> Donation:
+
+        if donation.is_deleted:
+            raise ValueError(
+                "Deleted donations cannot be marked as unmatched."
+            )
+
+        if donation.status != DonationStatus.MATCHING:
+            raise ValueError(
+                "Only matching donations can become unmatched."
+            )
+
+        donation.status = DonationStatus.UNMATCHED
+
+        self.db.flush()
+        self.db.refresh(donation)
+
+        return donation
+
     def delete(
         self,
         donation: Donation,
