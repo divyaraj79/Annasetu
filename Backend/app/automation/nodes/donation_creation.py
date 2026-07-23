@@ -1,8 +1,6 @@
 from app.automation.state import AutomationState
 
-from app.schemas.donation import (
-    DonationCreate,
-)
+from app.schemas.donation import DonationCreate
 
 
 def donation_creation_node(
@@ -13,9 +11,7 @@ def donation_creation_node(
     and create the donation.
     """
 
-    automation = (
-        state["services"]["automation"]
-    )
+    automation = state["services"]["automation"]
 
     donation = DonationCreate(
         restaurant_id=state["restaurant"].id,
@@ -27,5 +23,10 @@ def donation_creation_node(
     )
 
     state["donation"] = created
+
+    # Mark email as processed
+    state["services"]["email"].mark_email_as_read(
+        state["email"]["id"],
+    )
 
     return state

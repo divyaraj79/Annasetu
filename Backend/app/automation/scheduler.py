@@ -26,7 +26,6 @@ class Scheduler:
         self.db = db
 
         self.lifecycle_service = LifecycleService(db)
-
         self.workflow = Workflow(db)
 
     def run_once(self) -> None:
@@ -40,9 +39,7 @@ class Scheduler:
 
             self._check_donation_expiry()
 
-            self._process_restaurant_emails()
-
-            self._process_ngo_replies()
+            self._process_emails()
 
             self.db.commit()
 
@@ -51,6 +48,10 @@ class Scheduler:
             self.db.rollback()
 
             raise
+
+    # --------------------------------------------------
+    # Lifecycle Tasks
+    # --------------------------------------------------
 
     def _check_match_timeouts(self) -> None:
         """
@@ -105,37 +106,30 @@ class Scheduler:
                     donation
                 )
 
-    def _process_restaurant_emails(
+    # --------------------------------------------------
+    # Email Processing
+    # --------------------------------------------------
+
+    def _process_emails(
         self,
     ) -> None:
         """
-        Process unread restaurant emails.
+        Process every unread email.
+
+        LangGraph router decides whether
+        the email is:
+        - Restaurant donation
+        - NGO reply
+        - Ignore
         """
 
         emails = (
             self.workflow.email_service
-            .fetch_restaurant_emails()
+            .fetch_unread_emails()
         )
 
         for email in emails:
 
-            self.workflow.process_restaurant_email(
-                email
-            )
-
-    def _process_ngo_replies(
-        self,
-    ) -> None:
-        """
-        Process unread NGO replies.
-        """
-
-        emails = (
-            self.workflow.email_service
-            .fetch_ngo_replies()
-        )
-
-        for email in emails:
-            self.workflow.process_ngo_reply(
+            self.workflow.process_email(
                 email,
             )

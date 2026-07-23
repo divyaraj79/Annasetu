@@ -24,9 +24,9 @@ class AutomationState(TypedDict, total=False):
     donation: Donation
     match: Match
 
-    # AI extraction
+   # AI extraction
     donation_data: dict
-    reply_data: dict
+    reply: dict
 
     # Shared services
     services: dict[str, Any]
