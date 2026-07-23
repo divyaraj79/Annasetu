@@ -1,5 +1,14 @@
 from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+
+# old one 
+# from fastapi.security import OAuth2PasswordBearer
+
+# new one
+from fastapi.security import (
+    HTTPBearer,
+    HTTPAuthorizationCredentials,
+)
+
 from jose import JWTError
 from sqlalchemy.orm import Session
 
@@ -9,16 +18,29 @@ from app.models.user import User
 
 from uuid import UUID
 
+# old one 
+# oauth2_scheme = OAuth2PasswordBearer(
+#     tokenUrl="/auth/login"
+# )
 
-oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="/auth/login"
-)
+# new one
+security = HTTPBearer()
 
+# old one
+# def get_current_user(
+#     token: str = Depends(oauth2_scheme),
+#     db: Session = Depends(get_db),
+# ) -> User:
 
+# new one 
 def get_current_user(
-    token: str = Depends(oauth2_scheme),
+    credentials: HTTPAuthorizationCredentials = Depends(
+        security
+    ),
     db: Session = Depends(get_db),
 ) -> User:
+
+    token = credentials.credentials
 
     try:
         payload = verify_access_token(token)
