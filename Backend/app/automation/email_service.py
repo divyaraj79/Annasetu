@@ -153,3 +153,17 @@ class EmailService:
         self.email_client.mark_as_read(
             message_id
         )
+
+    def fetch_unread_emails(
+        self,
+    ) -> list[dict]:
+        """
+        Fetch every unread email.
+
+        LangGraph will determine
+        what type of email it is.
+        """
+
+        return (
+            self.email_client.fetch_unread_messages()
+        )

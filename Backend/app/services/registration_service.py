@@ -106,7 +106,7 @@ class RegistrationService:
         try:
             restaurant.verification_status = VerificationStatus.APPROVED
 
-            self.email_service.send_restaurant_registration_approval()(
+            self.email_service.send_restaurant_registration_approval(
                 restaurant,
             )
 
