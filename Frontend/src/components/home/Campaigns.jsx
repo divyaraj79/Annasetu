@@ -3,21 +3,21 @@ import { FaMapMarkerAlt } from "react-icons/fa";
 const campaigns = [
   {
     image:
-      "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?w=900",
+      "https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&w=900&q=80",
     title: "Community Meal Drive",
-    place: "Ahmedabad",
+    place: "Mandsaur",
   },
   {
     image:
-      "https://images.unsplash.com/photo-1469571486292-b53601020f1c?w=900",
+      "https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&w=900&q=80",
     title: "Restaurant Food Rescue",
-    place: "Vadodara",
+    place: "Mandsaur",
   },
   {
     image:
-      "https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?w=900",
+      "https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?auto=format&fit=crop&w=900&q=80",
     title: "Weekend Donation Camp",
-    place: "Surat",
+    place: "Mandsaur",
   },
 ];
 
@@ -58,6 +58,7 @@ export default function Campaigns() {
 
               <img
                 src={item.image}
+                alt={item.title}
                 className="h-60 w-full object-cover"
               />
 

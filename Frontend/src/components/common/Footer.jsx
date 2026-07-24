@@ -43,7 +43,7 @@ export default function Footer() {
           </h3>
 
           <p className="text-gray-300">
-            Ahmedabad, Gujarat
+            Mandsaur, M.P.
           </p>
 
           <p className="text-gray-300 mt-3">

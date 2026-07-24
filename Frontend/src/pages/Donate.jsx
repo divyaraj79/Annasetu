@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Heart, Clock, MapPin, Utensils } from "lucide-react";
+import { Heart, Utensils } from "lucide-react";
 
 const Donate = () => {
 
@@ -156,15 +156,8 @@ const Donate = () => {
               </label>
 
 
-              <div className="relative">
-
-                <MapPin 
-                size={18}
-                className="absolute left-3 top-3 text-gray-400"
-                />
-
                 <input
-                className="input-style pl-10"
+                className="input-style"
                 placeholder="Enter pickup location"
                 value={formData.address}
                 onChange={(e)=>setFormData({
@@ -172,8 +165,6 @@ const Donate = () => {
                   address:e.target.value
                 })}
                 />
-
-              </div>
 
             </div>
 
@@ -188,24 +179,15 @@ const Donate = () => {
               </label>
 
 
-              <div className="relative">
-
-                <Clock
-                size={18}
-                className="absolute left-3 top-3 text-gray-400"
-                />
-
                 <input
                 type="time"
-                className="input-style pl-10"
+                className="input-style"
                 value={formData.pickupTime}
                 onChange={(e)=>setFormData({
                   ...formData,
                   pickupTime:e.target.value
                 })}
                 />
-
-              </div>
 
 
             </div>
