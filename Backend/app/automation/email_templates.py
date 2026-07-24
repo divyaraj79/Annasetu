@@ -7,8 +7,6 @@ from app.models.ngo import NGO
 # Email Subjects
 # --------------------------------------------------
 
-DONATION = "Food Donation"
-
 DONATION_UPDATE = "Donation Update"
 
 DONATION_CANCELLED = "Donation Cancellation"
@@ -134,18 +132,35 @@ def ngo_notification_template(
 
         Simply reply to this email.
 
-        Examples:
+        Reply using one of the following formats.
 
-        Examples:
-            Accept
+        ----------------------------------------
 
-            or
+        Accept
 
-            Decline:
-            No volunteers available today.
+        Reference ID:
+        {match.id}
 
-        Decline:
-        "Sorry, we don't have volunteers today."
+        ----------------------------------------
+
+        Decline
+
+        Reason:
+        No volunteers available today.
+
+        Reference ID:
+        {match.id}
+
+        ----------------------------------------
+
+        Donation Received
+
+        Reference ID:
+        {match.id}
+
+        ----------------------------------------
+
+        Please keep the Reference ID exactly as provided.
 
         Thank you.
 
@@ -230,16 +245,37 @@ def ngo_registration_approved_template() -> str:
 
         Simply reply to the same email.
 
-        Example:
+        To ACCEPT a donation:
 
         Accept
 
+        Reference ID:
+        <Reference ID>
+
+        ----------------------------------------
+
         To DECLINE a donation:
 
-        Reply with:
+        Decline
 
-        Decline:
+        Reason:
         No volunteers available today.
+
+        Reference ID:
+        <Reference ID>
+
+        ----------------------------------------
+
+        After successfully collecting the food:
+
+        Donation Received
+
+        Reference ID:
+        <Reference ID>
+
+        ----------------------------------------
+
+        Always copy the Reference ID exactly as provided in the donation email.
 
         Important:
 

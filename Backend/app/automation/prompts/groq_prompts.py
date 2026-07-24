@@ -24,11 +24,32 @@ Rules:
 - Return ONLY valid JSON.
 - Do not wrap the JSON in markdown.
 - Do not add explanations.
-- If a field is missing, return null.
+- If expiry_time cannot be determined, return null rather than inventing a value.
 - quantity must be an integer.
 - is_vegetarian must be true or false.
-- cooked_at should remain exactly as written in the email.
-- expiry_time should remain exactly as written in the email.
+- Recognize equivalent natural language expressions for cooking time and expiry time, even if the exact field names are not used.
+
+Date and Time Rules:
+
+- Convert cooked_at and expiry_time into ISO-8601 datetime strings.
+- Do NOT return natural language such as "today", "tomorrow", "8 PM", or "next morning".
+- Assume the email was written on the current date if only a time is provided.
+- If a timezone is not specified, use the local timezone of the restaurant.
+- Return values in a format directly parsable by Python datetime.
+
+Examples:
+
+Today at 12:00 PM
+→ 2026-07-24T12:00:00+05:30
+
+Today 8:30 PM
+→ 2026-07-24T20:30:00+05:30
+
+24 July 2026 6:15 PM
+→ 2026-07-24T18:15:00+05:30
+
+Tomorrow 9 AM
+→ 2026-07-25T09:00:00+05:30
 
 Food Category must be one of:
 - main_course
@@ -78,7 +99,9 @@ If uncertain, return null.
 NGO_REPLY_PROMPT = """
 You are analysing an NGO's reply to a food donation notification.
 
-The email thread contains the original donation notification sent by AnnaSetu and the NGO's reply.
+You are analysing an NGO email sent in response to a food donation notification.
+
+The email body contains a command and a Reference ID.
 
 The original notification includes a line in the following format:
 
@@ -87,8 +110,8 @@ Reference ID:
 
 Your tasks are:
 
-1. Extract the Reference ID as "match_id".
-2. Determine whether the NGO accepted or declined the donation.
+1. Extract the Reference ID as "reference_id".
+2. Determine whether the NGO accepted, declined, or confirmed that the donation has been received.
 3. If the NGO declined, extract the reason.
 
 Return ONLY valid JSON.
@@ -96,16 +119,38 @@ Return ONLY valid JSON.
 If accepted:
 
 {
-    "match_id": "",
+    "reference_id": "",
     "intent": "accept"
 }
 
 If declined:
 
 {
-    "match_id": "",
+    "reference_id": "",
     "intent": "decline",
     "reason": ""
+}
+
+If the NGO confirms successful collection:
+
+{
+    "reference_id": "",
+    "intent": "completed"
+}
+
+If the NGO replies with phrases such as:
+
+- Donation Received
+- Food Received
+- Donation Collected
+- Food Collected
+- Successfully Received
+
+return:
+
+{
+    "reference_id": "...",
+    "intent": "completed"
 }
 
 Rules:
@@ -113,6 +158,11 @@ Rules:
 - Return ONLY JSON.
 - Do not wrap the JSON in markdown.
 - Do not add explanations.
+- The Reference ID is always provided in the email body.
+- Extract it exactly as written.
+- Do not generate, modify, or infer the Reference ID.
 - Preserve the UUID exactly as written.
 - If no decline reason is provided, use null.
+
+
 """

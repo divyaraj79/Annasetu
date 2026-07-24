@@ -25,9 +25,9 @@ try:
 
     admin = User(
         name="Admin",
-        email="admin@annasetu.com",
+        email="minato71e@gmail.com",
         phone="9999999999",
-        password_hash=hash_password("Admin@123"),
+        password_hash=hash_password("leaf@123"),
         role=UserRole.ADMIN,
         is_active=True,
         is_deleted=False,
@@ -41,7 +41,7 @@ try:
     print("Admin created successfully!")
     print(f"ID       : {admin.id}")
     print(f"Email    : {admin.email}")
-    print("Password : Admin@123")
+    print("Password : leaf@123")
     print("=" * 50)
 
 except Exception:

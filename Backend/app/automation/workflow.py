@@ -87,7 +87,7 @@ class Workflow:
         )
 
         match = self.match_service.get_by_id(
-            UUID(reply["match_id"])
+            UUID(reply["reference_id"])
         )
 
         if match is None:

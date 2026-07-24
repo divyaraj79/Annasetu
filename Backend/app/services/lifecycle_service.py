@@ -12,6 +12,10 @@ from app.automation.email_service import EmailService
 
 from datetime import datetime, timezone
 
+MATCH_COMPLETED_REASON = (
+    "Donation completed by another NGO."
+)
+
 class LifecycleService:
 
     def __init__(self, db: Session):
@@ -90,6 +94,57 @@ class LifecycleService:
             match.donation.restaurant,
             match.ngo,
         )
+
+        return match
+
+    def process_match_completed(
+        self,
+        match: Match,
+    ) -> Match:
+
+        match = self.match_service.mark_as_completed(
+            match,
+        )
+
+        donation = match.donation
+
+        donation.status = (
+            DonationStatus.COMPLETED
+        )
+
+        for item in donation.donation_items:
+
+            item.status = (
+                DonationStatus.COMPLETED
+            )
+
+        remaining_matches = (
+            self.db.query(Match)
+            .filter(
+                Match.donation_id == donation.id,
+                Match.id != match.id,
+                Match.is_deleted == False,
+                Match.status.in_(
+                    [
+                        MatchStatus.PENDING,
+                        MatchStatus.NOTIFIED,
+                    ]
+                ),
+            )
+            .all()
+        )
+
+        for remaining in remaining_matches:
+
+            remaining.status = (
+                MatchStatus.DECLINED
+            )
+
+            remaining.match_reason = (
+                MATCH_COMPLETED_REASON
+            )
+
+            remaining.is_deleted = True
 
         return match
     

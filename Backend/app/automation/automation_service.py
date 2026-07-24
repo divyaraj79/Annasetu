@@ -56,6 +56,19 @@ class AutomationService:
             match
         )
 
+    def complete_match(
+        self,
+        match: Match,
+    ):
+        """
+        Process donation completion received
+        through automation.
+        """
+
+        return self.lifecycle_service.process_match_completed(
+            match,
+        )
+
     def decline_match(
         self,
         match: Match,

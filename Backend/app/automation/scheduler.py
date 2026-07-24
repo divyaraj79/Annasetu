@@ -11,7 +11,8 @@ from app.enums.status import (
 )
 
 from app.services.lifecycle_service import LifecycleService
-from app.automation.workflow import Workflow
+from app.automation.executor import GraphExecutor
+from app.automation.email_service import EmailService
 
 
 MATCH_RESPONSE_TIMEOUT = timedelta(minutes=30)
@@ -27,7 +28,8 @@ class Scheduler:
 
         self.lifecycle_service = LifecycleService(db)
 
-        self.workflow = Workflow(db)
+        self.email_service = EmailService()
+        self.executor = GraphExecutor(db)
 
     def run_once(self) -> None:
         """
@@ -113,14 +115,14 @@ class Scheduler:
         """
 
         emails = (
-            self.workflow.email_service
+            self.email_service
             .fetch_restaurant_emails()
         )
 
         for email in emails:
 
-            self.workflow.process_restaurant_email(
-                email
+            self.executor.execute(
+                email,
             )
 
     def _process_ngo_replies(
@@ -131,11 +133,12 @@ class Scheduler:
         """
 
         emails = (
-            self.workflow.email_service
+            self.email_service
             .fetch_ngo_replies()
         )
 
         for email in emails:
-            self.workflow.process_ngo_reply(
+
+            self.executor.execute(
                 email,
             )
