@@ -26,6 +26,7 @@ class AutomationState(TypedDict, total=False):
 
     # AI extraction
     donation_data: dict
+    donation_items: list[dict]
     reply_data: dict
 
     # Shared services

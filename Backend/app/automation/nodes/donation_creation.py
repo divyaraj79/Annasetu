@@ -1,29 +1,22 @@
 from app.automation.state import AutomationState
 
-from app.schemas.donation import (
-    DonationCreate,
-)
-
 
 def donation_creation_node(
     state: AutomationState,
 ) -> AutomationState:
     """
-    Validate extracted donation data
-    and create the donation.
+    Create donation and donation items
+    from extracted AI data.
     """
 
     automation = (
         state["services"]["automation"]
     )
 
-    donation = DonationCreate(
-        restaurant_id=state["restaurant"].id,
-        **state["donation_data"],
-    )
-
     created = automation.create_donation(
-        donation,
+        restaurant=state["restaurant"],
+        donation_data=state["donation_data"],
+        donation_items=state["donation_items"],
     )
 
     state["donation"] = created

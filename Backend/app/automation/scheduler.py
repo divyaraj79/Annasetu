@@ -119,11 +119,23 @@ class Scheduler:
             .fetch_restaurant_emails()
         )
 
-        for email in emails:
+        # for email in emails:
 
-            self.executor.execute(
-                email,
-            )
+        #     self.executor.execute(
+        #         email,
+        #     )
+
+        for email in emails:
+            try:
+                self.executor.execute(
+                    email,
+                )
+
+            except Exception as exc:
+                print(
+                    f"Restaurant email processing failed: {exc}"
+                )
+                continue
 
     def _process_ngo_replies(
         self,
@@ -138,7 +150,14 @@ class Scheduler:
         )
 
         for email in emails:
+            try:
 
-            self.executor.execute(
-                email,
-            )
+                self.executor.execute(
+                    email,
+                )
+
+            except Exception as exc:
+                print(
+                    f"NGO email processing failed: {exc}"
+                )
+                continue

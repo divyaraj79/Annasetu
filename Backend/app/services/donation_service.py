@@ -48,9 +48,9 @@ class DonationService:
             if donation_data.expiry_time <= donation_data.cooked_at:
                 raise ValueError("Expiry time must be after cooked time.")
 
-            if donation_data.expiry_time > donation_data.cooked_at + timedelta(hours=10):
+            if donation_data.expiry_time > donation_data.cooked_at + timedelta(hours=20):
                 raise ValueError(
-                    "Food expiry cannot exceed 10 hours after cooking."
+                    "Food expiry cannot exceed 20 hours after cooking."
                 )
 
         donation = Donation(
@@ -140,9 +140,9 @@ class DonationService:
                     "Expiry time must be after cooked time."
                 )
 
-            if expiry_time - cooked_at > timedelta(hours=10):
+            if expiry_time - cooked_at > timedelta(hours=20):
                 raise ValueError(
-                    "Maximum food life cannot exceed 10 hours."
+                    "Maximum food life cannot exceed 20 hours."
                 )
             
         

@@ -11,10 +11,19 @@ def donation_extraction_node(
 
     groq = state["services"]["groq"]
 
-    state["donation_data"] = (
-        groq.extract_donation(
-            state["email"]["body"]
-        )
+    extracted = groq.extract_donation(
+        state["email"]["body"]
     )
+
+    print("\n========== GROQ OUTPUT ==========")
+    print(extracted)
+    print("=================================\n")
+
+    state["donation_items"] = extracted.pop(
+        "items",
+        [],
+    )
+
+    state["donation_data"] = extracted
 
     return state

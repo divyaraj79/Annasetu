@@ -49,25 +49,43 @@ def registration_approved_template() -> str:
         Food Donation
 
         Please include at least the following details:
+            • Donation Title
+            • Donation Items
+            • Food Category
+            • Vegetarian / Non-Vegetarian
+            • Cooked Time
+            • Expiry Time
+            • Pickup Address
+            • Special Notes (Optional)
 
-        • Food Name
-        • Food Category
-        • Quantity
-        • Quantity Unit
-        • Vegetarian / Non-Vegetarian
-        • Cooked Time
-        • Pickup Address
-        • Special Notes (Optional)
+        Example:
 
-        Example: 
-            Food Name: Veg Biryani
-            Food Category: main_course
-            Quantity: 40
-            Quantity Unit: kg
-            Vegetarian: Yes
-            Cooked At: 1:30 PM
-            Pickup Address: ABC Restaurant, Ahmedabad
-            Special Notes: Please collect before 8 PM.
+            Donation Title:
+            Mixed Vegetarian Meal
+
+            Donation Items:
+            Veg Biryani - 20 kg
+            Dal Tadka - 15 kg
+            Jeera Rice - 18 kg
+            Raita - 12 liters
+
+            Food Category:
+            main_course
+
+            Vegetarian:
+            Yes
+
+            Cooked At:
+            24 July 2026 8:30 PM
+
+            Expiry Time:
+            25 July 2026 7:00 AM
+
+            Pickup Address:
+            ABC Restaurant, Ahmedabad
+
+            Special Notes:
+            Please collect before 1 AM.
 
         Examples of Food Category:
             main_course
@@ -77,14 +95,15 @@ def registration_approved_template() -> str:
             bakery
             other
 
-        Examples of Quantity Unit:
-            kg
-            liters
-            piece
 
-        You may also write naturally.
-        AnnaSetu will automatically extract
+        You may either follow the above format
+        or write naturally in plain English.
+
+        AnnaSetu AI will automatically extract
         the required information.
+
+        Providing the information clearly
+        improves extraction accuracy.
 
         Note:
             Our AI reads your emails automatically.
@@ -110,7 +129,7 @@ def ngo_notification_template(
         Reference ID (Do not remove this when replying):
         {match.id}
 
-        Food Name:
+        Donation Title:
         {donation.food_name}
 
         Category:
@@ -234,12 +253,12 @@ def ngo_registration_approved_template() -> str:
         requests through this email address.
 
         Each donation email contains:
-
-        • Reference ID
-        • Food Details
-        • Quantity
-        • Pickup Address
-        • Expiry Time
+            • Reference ID
+            • Donation Title
+            • Food Category
+            • Number of Donation Items
+            • Pickup Address
+            • Expiry Time
 
         To ACCEPT a donation:
 
@@ -266,9 +285,8 @@ def ngo_registration_approved_template() -> str:
 
         ----------------------------------------
 
-        After successfully collecting the food:
-
-        Donation Received
+        After successfully collecting the donation:
+            Donation Received
 
         Reference ID:
         <Reference ID>

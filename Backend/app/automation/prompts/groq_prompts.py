@@ -1,57 +1,64 @@
 DONATION_EXTRACTION_PROMPT = """
 You are an information extraction assistant.
 
-Extract the donation details from the restaurant email.
+Extract structured donation information from a restaurant email.
 
 Return ONLY valid JSON.
 
 Schema:
+
 {
-    "food_name": "",
+    "title": "",
     "food_category": "",
     "is_vegetarian": true,
-    "quantity": 0,
-    "quantity_unit": "",
     "cooked_at": "",
     "expiry_time": "",
     "pickup_address": "",
-    "special_notes": ""
+    "special_notes": "",
+    "items": [
+        {
+            "food_name": "",
+            "quantity": 0,
+            "quantity_unit": ""
+        }
+    ]
 }
-
 
 Rules:
 
 - Return ONLY valid JSON.
-- Do not wrap the JSON in markdown.
-- Do not add explanations.
-- If expiry_time cannot be determined, return null rather than inventing a value.
-- quantity must be an integer.
-- is_vegetarian must be true or false.
-- Recognize equivalent natural language expressions for cooking time and expiry time, even if the exact field names are not used.
+- Do not wrap JSON inside markdown.
+- Do not explain anything.
+- Never invent missing values.
+- If expiry_time cannot be determined, return null.
+- items must contain every food item mentioned.
+- If only one food item exists, return a list with one object.
+- Quantity must be an integer.
+- Quantity Unit must be one of:
+    - kg
+    - liters
+    - piece
 
-Date and Time Rules:
-
-- Convert cooked_at and expiry_time into ISO-8601 datetime strings.
-- Do NOT return natural language such as "today", "tomorrow", "8 PM", or "next morning".
-- Assume the email was written on the current date if only a time is provided.
-- If a timezone is not specified, use the local timezone of the restaurant.
-- Return values in a format directly parsable by Python datetime.
+The field "title" is a short summary of the complete donation.
 
 Examples:
 
-Today at 12:00 PM
-→ 2026-07-24T12:00:00+05:30
+Veg Biryani
+→ Veg Biryani
 
-Today 8:30 PM
-→ 2026-07-24T20:30:00+05:30
+Rice + Dal + Sabzi
+→ Mixed Vegetarian Meal
 
-24 July 2026 6:15 PM
-→ 2026-07-24T18:15:00+05:30
+Rice + Chicken Curry
+→ Mixed Meal
 
-Tomorrow 9 AM
-→ 2026-07-25T09:00:00+05:30
+Bread + Cake + Cookies
+→ Bakery Donation
+
+The title should be concise (2–6 words).
 
 Food Category must be one of:
+
 - main_course
 - snacks
 - dessert
@@ -59,40 +66,34 @@ Food Category must be one of:
 - bakery
 - other
 
-Quantity Unit must be one of:
-- kg
-- liters
-- piece
+Choose the category that best represents the donation overall.
 
-If the email uses a different term, map it to the closest valid value.
+Vegetarian Rules:
 
-Examples:
+Return true only if ALL donated food is vegetarian.
 
-"Biryani", "Rice", "Dal", "Sabzi"
-→ main_course
+Return false if ANY item is non-vegetarian.
 
-"Tea", "Coffee", "Juice"
-→ beverage
+Return null only if it cannot reasonably be determined.
 
-"Cake", "Bread", "Cookies"
-→ bakery
+Date and Time Rules:
 
-"Sweet", "Ice Cream"
-→ dessert
-
-"Samosa", "Sandwich", "Puff"
-→ snacks
-
-If the restaurant does not explicitly mention whether the food is vegetarian, infer it from the food name if reasonably certain.
+Convert cooked_at and expiry_time into ISO-8601 datetime strings.
 
 Examples:
 
-Veg Biryani -> true
-Paneer Butter Masala -> true
-Chicken Biryani -> false
-Egg Curry -> false
+2026-07-24T12:00:00+05:30
 
-If uncertain, return null.
+2026-07-24T20:30:00+05:30
+
+Do not return:
+
+Today
+Tomorrow
+8 PM
+Tonight
+
+Return timezone-aware values.
 """
 
 
