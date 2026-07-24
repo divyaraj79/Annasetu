@@ -9,6 +9,10 @@ from app.schemas.donation import DonationCreate, DonationUpdate
 from app.enums.verification_status import VerificationStatus
 from app.enums.status import DonationStatus
 
+from app.automation.exceptions import (
+    AutomationValidationError,
+)
+
 
 class DonationService:
     def __init__(self, db: Session):
@@ -23,33 +27,43 @@ class DonationService:
         )
 
         if not restaurant:
-            raise ValueError("Restaurant not found.")
+            raise AutomationValidationError(
+                "Restaurant not found."
+            )
 
         # Restaurant must not be deleted
         if restaurant.is_deleted:
-            raise ValueError("Restaurant is deleted.")
+            raise AutomationValidationError(
+                "Restaurant account is no longer active."
+            )
 
         # Restaurant must be approved
         if restaurant.verification_status != VerificationStatus.APPROVED:
-            raise ValueError("Restaurant is not approved.")
+            raise AutomationValidationError(
+                "Your restaurant has not been approved yet."
+            )
 
         # Quantity validation
         if donation_data.quantity <= 0:
-            raise ValueError("Quantity must be greater than zero.")
+            raise AutomationValidationError(
+                "Donation must contain at least one item."
+            )
         
         # Expiry validation
         if donation_data.expiry_time <= datetime.now(timezone.utc):
-            raise ValueError(
-                "Expiry time must be in the future."
+            raise AutomationValidationError(
+                "Expiry Time must be in the future."
             )
 
         if donation_data.cooked_at:
 
             if donation_data.expiry_time <= donation_data.cooked_at:
-                raise ValueError("Expiry time must be after cooked time.")
+                raise AutomationValidationError(
+                    "Expiry Time must be after Cooked Time."
+                )
 
             if donation_data.expiry_time > donation_data.cooked_at + timedelta(hours=20):
-                raise ValueError(
+                raise AutomationValidationError(
                     "Food expiry cannot exceed 20 hours after cooking."
                 )
 

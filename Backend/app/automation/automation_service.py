@@ -13,6 +13,10 @@ from app.services.donation_item_service import DonationItemService
 from app.enums.quantity_unit import QuantityUnit
 from app.models.restaurant import Restaurant
 
+from app.automation.exceptions import (
+    AutomationValidationError,
+)
+
 
 class AutomationService:
 
@@ -43,9 +47,25 @@ class AutomationService:
         """
 
         if not donation_items:
-            raise ValueError(
-                "Donation must contain at least one donation item."
+            raise AutomationValidationError(
+                "At least one donation item must be provided."
             )
+
+        required_fields = {
+            "title": "Donation Title",
+            "food_category": "Food Category",
+            "is_vegetarian": "Vegetarian Information",
+            "cooked_at": "Cooked Time",
+            "expiry_time": "Expiry Time",
+            "pickup_address": "Pickup Address",
+        }
+                
+        for field, display_name in required_fields.items():
+            if donation_data.get(field) in (None, ""):
+                
+                raise AutomationValidationError(
+                    f"{display_name} is missing."
+                )
         
         donation_payload = donation_data.copy()
 
@@ -53,15 +73,20 @@ class AutomationService:
             "title"
         )
 
-        donation_schema = DonationCreate(
-            restaurant_id=restaurant.id,
-            **donation_payload,
-            # Aggregate donation summary.
-            # Quantity represents the number of donation items,
-            # not their combined physical quantity.
-            quantity=len(donation_items),
-            quantity_unit=QuantityUnit.PIECE,
-        )
+        try : 
+            donation_schema = DonationCreate(
+                restaurant_id=restaurant.id,
+                **donation_payload,
+                # Aggregate donation summary.
+                # Quantity represents the number of donation items,
+                # not their combined physical quantity.
+                quantity=len(donation_items),
+                quantity_unit=QuantityUnit.PIECE,
+            )
+        except Exception:
+            raise AutomationValidationError(
+                "The donation details could not be understood. Please review the email and send it again."
+            )
 
         donation = self.donation_service.create(
             donation_schema

@@ -1,4 +1,7 @@
 from app.automation.state import AutomationState
+from app.automation.exceptions import (
+    AutomationValidationError,
+)
 
 
 def reply_action_node(
@@ -34,8 +37,7 @@ def reply_action_node(
         )
 
     else:
-
-        raise ValueError(
+        raise AutomationValidationError(
             f"Unsupported NGO intent: {reply['intent']}"
         )
 

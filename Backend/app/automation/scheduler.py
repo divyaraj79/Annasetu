@@ -14,6 +14,10 @@ from app.services.lifecycle_service import LifecycleService
 from app.automation.executor import GraphExecutor
 from app.automation.email_service import EmailService
 
+from app.automation.exceptions import (
+    AutomationValidationError,
+)
+
 
 MATCH_RESPONSE_TIMEOUT = timedelta(minutes=30)
 
@@ -119,21 +123,34 @@ class Scheduler:
             .fetch_restaurant_emails()
         )
 
-        # for email in emails:
-
-        #     self.executor.execute(
-        #         email,
-        #     )
-
         for email in emails:
             try:
                 self.executor.execute(
                     email,
                 )
 
+            except AutomationValidationError as exc:
+                print(
+                    f"Restaurant validation failed: {exc.message}"
+                )
+                try:
+                    self.email_service.send_donation_validation_failed(
+                        recipient=email["from"],
+                        reason=exc.message,
+                    )
+                    self.email_service.mark_email_as_read(
+                        email["id"],
+                    )
+
+                except Exception as send_exc:
+                    print(
+                        f"Failed to send correction email: {send_exc}"
+                    )
+                continue
+
             except Exception as exc:
                 print(
-                    f"Restaurant email processing failed: {exc}"
+                    f"Restaurant processing failed: {exc}"
                 )
                 continue
 
@@ -151,13 +168,21 @@ class Scheduler:
 
         for email in emails:
             try:
-
                 self.executor.execute(
                     email,
                 )
 
+            except AutomationValidationError as exc:
+                print(
+                    f"NGO validation failed: {exc}"
+                )
+                self.email_service.mark_email_as_read(
+                    email["id"]
+                )
+                continue
+
             except Exception as exc:
                 print(
-                    f"NGO email processing failed: {exc}"
+                    f"NGO processing failed: {exc}"
                 )
                 continue

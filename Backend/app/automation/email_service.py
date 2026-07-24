@@ -7,6 +7,8 @@ from app.automation.email_templates import (
     DONATION_UNMATCHED,
     MATCH_TIMEOUT,
     NGO_REGISTRATION_APPROVED,
+    DONATION_VALIDATION_FAILED,
+    donation_validation_failed_template,
     ngo_registration_approved_template,
     registration_approved_template,
     ngo_notification_template,
@@ -143,6 +145,20 @@ class EmailService:
             recipient=ngo.user.email,
             subject=MATCH_TIMEOUT,
             body=match_timeout_template(),
+        )
+
+    def send_donation_validation_failed(
+        self,
+        recipient: str,
+        reason: str,
+    ) -> dict:
+
+        return self.email_client.send_email(
+            recipient=recipient,
+            subject=DONATION_VALIDATION_FAILED,
+            body=donation_validation_failed_template(
+                reason,
+            ),
         )
     
     def mark_email_as_read(

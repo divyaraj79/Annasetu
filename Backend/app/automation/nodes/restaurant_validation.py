@@ -1,7 +1,9 @@
 from email.utils import parseaddr
 
 from app.automation.state import AutomationState
-
+from app.automation.exceptions import (
+    AutomationValidationError,
+)
 
 def restaurant_validation_node(
     state: AutomationState,
@@ -26,7 +28,7 @@ def restaurant_validation_node(
     )
 
     if restaurant is None:
-        raise ValueError(
+        raise AutomationValidationError(
             "Unknown restaurant email."
         )
 

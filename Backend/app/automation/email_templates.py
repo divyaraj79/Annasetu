@@ -29,6 +29,10 @@ NGO_REGISTRATION_APPROVED = (
 
 MATCH_TIMEOUT = "Donation Response Timeout"
 
+DONATION_VALIDATION_FAILED = (
+    "Donation Could Not Be Processed"
+)
+
 
 # --------------------------------------------------
 # Templates
@@ -306,6 +310,34 @@ def ngo_registration_approved_template() -> str:
         your reply.
 
         Thank you for helping reduce food waste.
+
+        Team AnnaSetu
+        """
+
+
+def donation_validation_failed_template(
+    reason: str,
+) -> str:
+
+    return f"""
+        Hello,
+
+        We received your Food Donation email
+        but could not process it.
+
+        Reason:
+
+        {reason}
+
+        Please correct the above issue and
+        send a NEW email with the subject:
+
+        Food Donation
+
+        You do not need to reply to the
+        previous email.
+
+        Thank you for supporting AnnaSetu.
 
         Team AnnaSetu
         """
