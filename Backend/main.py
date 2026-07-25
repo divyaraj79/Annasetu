@@ -10,36 +10,44 @@ from app.routers.donation_item_router import router as donation_item_router
 from app.routers.auth_router import router as auth_router
 from app.core.exception_handler import register_exception_handlers
 from app.routers.admin_router import router as admin_router
+from app.routers.automation_router import (
+    router as automation_router,
+)
 
-from contextlib import asynccontextmanager
-import asyncio
+# from contextlib import asynccontextmanager
+# import asyncio
 
-from app.automation.runner import scheduler_runner
+# from app.automation.runner import scheduler_runner 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
+# @asynccontextmanager
+# async def lifespan(app: FastAPI):
 
-    task = asyncio.create_task(
-        scheduler_runner()
-    )
+#     task = asyncio.create_task(
+#         scheduler_runner()
+#     )
 
-    try:
-        yield
-    finally:
-        task.cancel()
+#     try:
+#         yield
+#     finally:
+#         task.cancel()
 
-        try:
-            await task
-        except asyncio.CancelledError:
-            pass
+#         try:
+#             await task
+#         except asyncio.CancelledError:
+#             pass
 
+
+# app = FastAPI(
+#     title="AnnaSetu API",
+#     lifespan=lifespan,
+# )
 
 app = FastAPI(
     title="AnnaSetu API",
-    lifespan=lifespan,
 )
 
 register_exception_handlers(app)
+app.include_router(automation_router)
 app.include_router(user_router)
 app.include_router(admin_router)
 app.include_router(restaurant_router)

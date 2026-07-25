@@ -38,6 +38,10 @@ DATABASE_URL = get_required_env("DATABASE_URL")
 
 SECRET_KEY = get_required_env("SECRET_KEY")
 
+AUTOMATION_SECRET = get_required_env(
+    "AUTOMATION_SECRET"
+)
+
 ALGORITHM = os.getenv(
     "ALGORITHM",
     "HS256",
