@@ -60,21 +60,25 @@ class MatchingService:
         if not ranked_ngos:
 
             if existing_matches == 0:
+
                 donation.status = DonationStatus.UNMATCHED
 
-            # TODO:
-            # Notify restaurant that no NGO
-            # could be matched.
+                self.email_service.send_donation_unmatched(
+                    donation.restaurant,
+                )
 
             return []
         
         matches = []
 
+        # Never create a second Match row for the same NGO.
+        # Existing rows (even soft-deleted declined ones)
+        # preserve attempt history.
         existing_ngo_ids = {
             match.ngo_id
             for match in donation.matches
-                if not match.is_deleted
         }
+
         ranked_ngos = [
             (ngo, score)
             for ngo, score in ranked_ngos

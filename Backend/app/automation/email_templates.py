@@ -33,6 +33,10 @@ DONATION_VALIDATION_FAILED = (
     "Donation Could Not Be Processed"
 )
 
+NEED_VALIDATION_FAILED = (
+    "Food Need Could Not Be Processed"
+)
+
 NEED_EMAIL = "Food Need"
 
 
@@ -335,6 +339,34 @@ def donation_validation_failed_template(
         send a NEW email with the subject:
 
         Food Donation
+
+        You do not need to reply to the
+        previous email.
+
+        Thank you for supporting AnnaSetu.
+
+        Team AnnaSetu
+        """
+
+
+def need_validation_failed_template(
+    reason: str,
+) -> str:
+
+    return f"""
+        Hello,
+
+        We received your Food Need email
+        but could not process it.
+
+        Reason:
+
+        {reason}
+
+        Please correct the above issue and
+        send a NEW email with the subject:
+
+        Food Need
 
         You do not need to reply to the
         previous email.

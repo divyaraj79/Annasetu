@@ -127,6 +127,16 @@ class LifecycleService:
             DonationStatus.COMPLETED
         )
 
+        # TODO (v2):
+        # Match currently stores only donation_id and ngo_id.
+        # It does not store the specific need_id that generated
+        # this match, so we cannot determine which NGO Need has
+        # been fulfilled.
+        #
+        # When need_id is added to Match, mark that Need as
+        # COMPLETED (or decrement its remaining quantity for
+        # partial fulfillment) here.
+
         for item in donation.donation_items:
 
             item.status = (

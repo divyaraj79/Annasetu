@@ -11,6 +11,9 @@ from app.automation.prompts.groq_prompts import (
     NEED_EXTRACTION_PROMPT,
 )
 
+from app.automation.exceptions import (
+    AutomationValidationError,
+)
 
 load_dotenv()
 
@@ -81,6 +84,34 @@ class GroqClient:
 
         return response.choices[0].message.content
 
+    def _parse_json(
+        self,
+        response: str,
+    ) -> dict:
+        """
+        Parse Groq JSON output.
+        """
+
+        try:
+            return json.loads(response)
+
+        except json.JSONDecodeError as exc:
+            raise AutomationValidationError(
+                "AI could not understand the email. Please resend it with clearer information."
+            ) from exc
+
+    def _validate_dict(
+        self,
+        data,
+    ) -> dict:
+
+        if not isinstance(data, dict):
+            raise AutomationValidationError(
+                "AI returned an invalid response."
+            )
+
+        return data
+
     def extract_donation(
         self,
         email_body: str,
@@ -96,7 +127,10 @@ class GroqClient:
             temperature=0,
         )
 
-        return json.loads(response)
+        # return self._parse_json(response)
+        return self._validate_dict(
+            self._parse_json(response)
+        )
 
     def extract_need(
         self,
@@ -113,7 +147,10 @@ class GroqClient:
             temperature=0,
         )
 
-        return json.loads(response)
+        # return self._parse_json(response)
+        return self._validate_dict(
+            self._parse_json(response)
+        )
 
     def extract_ngo_reply(
         self,
@@ -130,4 +167,7 @@ class GroqClient:
             temperature=0,
         )
 
-        return json.loads(response)
+        # return self._parse_json(response)
+        return self._validate_dict(
+            self._parse_json(response)
+        )

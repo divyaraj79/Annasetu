@@ -8,6 +8,8 @@ from app.automation.email_templates import (
     MATCH_TIMEOUT,
     NGO_REGISTRATION_APPROVED,
     DONATION_VALIDATION_FAILED,
+    NEED_VALIDATION_FAILED,
+    need_validation_failed_template,
     donation_validation_failed_template,
     ngo_registration_approved_template,
     registration_approved_template,
@@ -46,43 +48,6 @@ class EmailService:
             return (
                 self.email_client.fetch_unread_messages()
             )
-    
-    # def fetch_restaurant_emails(
-    #     self,
-    # ) -> list[dict]:
-    #     """
-    #     Fetch unread restaurant
-    #     donation emails.
-    #     """
-
-    #     emails = (
-    #         self.email_client.fetch_unread_messages()
-    #     )
-
-    #     return [
-    #         email
-    #         for email in emails
-    #         if email["subject"].strip() == DONATION_EMAIL
-    #     ]
-
-    # def fetch_ngo_replies(
-    #     self,
-    # ) -> list[dict]:
-    #     """
-    #     Fetch unread NGO reply emails.
-    #     """
-
-    #     emails = (
-    #         self.email_client.fetch_unread_messages()
-    #     )
-
-    #     return [
-    #         email
-    #         for email in emails
-    #         if email["subject"].strip().startswith(
-    #             f"Re: {NGO_NOTIFICATION}"
-    #         )
-    #     ]
 
     # --------------------------------------------------
     # Outgoing Emails
@@ -171,6 +136,20 @@ class EmailService:
             recipient=recipient,
             subject=DONATION_VALIDATION_FAILED,
             body=donation_validation_failed_template(
+                reason,
+            ),
+        )
+
+    def send_need_validation_failed(
+        self,
+        recipient: str,
+        reason: str,
+    ) -> dict:
+
+        return self.email_client.send_email(
+            recipient=recipient,
+            subject=NEED_VALIDATION_FAILED,
+            body=need_validation_failed_template(
                 reason,
             ),
         )
