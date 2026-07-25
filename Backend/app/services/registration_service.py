@@ -44,10 +44,9 @@ class RegistrationService:
                     email=registration_data.email,
                     phone=registration_data.phone,
                     role=registration_data.role,
-                )
+                ),
+                password_hash=hashed_password,
             )
-
-            user.password_hash = hashed_password
 
             if registration_data.role == UserRole.RESTAURANT:
                 restaurant_service.create(
@@ -55,6 +54,8 @@ class RegistrationService:
                         user_id=user.id,
                         restaurant_name=registration_data.organization_name,
                         address=registration_data.address,
+                        latitude=registration_data.latitude,
+                        longitude=registration_data.longitude,
                     )
                 )
 
@@ -64,6 +65,8 @@ class RegistrationService:
                         user_id=user.id,
                         ngo_name=registration_data.organization_name,
                         address=registration_data.address,
+                        latitude=registration_data.latitude,
+                        longitude=registration_data.longitude,
                     )
                 )
 

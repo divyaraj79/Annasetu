@@ -2,6 +2,7 @@ from enum import Enum
 
 
 class DonationStatus(str, Enum):
+    UNMATCHED = "unmatched"
     CREATED = "created"
     MATCHING = "matching"
     PENDING = "pending"

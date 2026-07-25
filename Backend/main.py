@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers.donation_router import router as donation_router
 from app.routers.match_router import router as match_router
@@ -12,6 +13,17 @@ from app.core.exception_handler import register_exception_handlers
 from app.routers.admin_router import router as admin_router
 
 app = FastAPI(title="AnnaSetu API")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 register_exception_handlers(app)
 app.include_router(user_router)

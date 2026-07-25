@@ -22,6 +22,8 @@ class DonationCreate(BaseModel):
     cooked_at: datetime | None = None
     expiry_time: datetime
     pickup_address: str
+    latitude: float | None = None
+    longitude: float | None = None
     special_notes: str | None = None
 
     @field_validator("food_name")
@@ -115,6 +117,8 @@ class DonationUpdate(BaseModel):
     cooked_at: datetime | None = None
     expiry_time: datetime | None = None
     pickup_address: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
     special_notes: str | None = None
 
     @field_validator("food_name")
