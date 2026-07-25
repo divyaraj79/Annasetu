@@ -106,18 +106,21 @@ class RegistrationService:
         try:
             restaurant.verification_status = VerificationStatus.APPROVED
 
-            self.email_service.send_restaurant_registration_approval(
-                restaurant,
-            )
-
             self.db.commit()
             self.db.refresh(restaurant)
-
-            return restaurant
 
         except Exception:
             self.db.rollback()
             raise
+
+        try:
+            self.email_service.send_restaurant_registration_approval(
+                restaurant,
+            )
+        except Exception as exc:
+            print(f"Failed to send approval email: {exc}")
+
+        return restaurant
     
     def approve_ngo_registration(
         self,
@@ -135,19 +138,22 @@ class RegistrationService:
 
         try:
             ngo.verification_status = VerificationStatus.APPROVED
-
-            self.email_service.send_ngo_registration_approval(
-                ngo,
-            )
-
+            
             self.db.commit()
             self.db.refresh(ngo)
-
-            return ngo
 
         except Exception:
             self.db.rollback()
             raise
+
+        try:
+            self.email_service.send_ngo_registration_approval(
+                ngo,
+            )
+        except Exception as exc:
+            print(f"Failed to send approval email: {exc}")
+
+        return ngo
     
     def _delete_registration(self, organization, user):
         try:
