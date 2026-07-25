@@ -1,5 +1,6 @@
 import { FaArrowRight, FaLeaf, FaHandsHelping } from "react-icons/fa";
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
 
 export default function Hero() {
   return (
@@ -34,14 +35,14 @@ export default function Hero() {
 
           <div className="flex gap-5 mt-10">
 
-            <button className="bg-primary hover:bg-secondary text-white px-7 py-4 rounded-full flex items-center gap-3 transition">
+            <Link to="/donate" className="bg-primary hover:bg-secondary text-white px-7 py-4 rounded-full flex items-center gap-3 transition">
               Donate Food
               <FaArrowRight />
-            </button>
+            </Link>
 
-            <button className="border-2 border-primary text-primary px-7 py-4 rounded-full hover:bg-primary hover:text-white transition">
+            <Link to="/about" className="border-2 border-primary text-primary px-7 py-4 rounded-full hover:bg-primary hover:text-white transition">
               Learn More
-            </button>
+            </Link>
 
           </div>
 

@@ -1,22 +1,36 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Heart } from "lucide-react";
+import api, { getApiError } from "../services/api";
 
 const Login = () => {
   const navigate = useNavigate();
 
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError("");
+    setIsSubmitting(true);
 
-    // backend later connect
-    console.log(formData);
-    navigate("/");
+    try {
+      const { data } = await api.post("/auth/login", formData);
+      localStorage.setItem("token", data.access_token);
+      const userResponse = await api.get("/auth/me");
+      localStorage.setItem("user", JSON.stringify(userResponse.data));
+      navigate(`/dashboard/${userResponse.data.role}`);
+    } catch (requestError) {
+      localStorage.removeItem("token");
+      setError(getApiError(requestError));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -99,10 +113,13 @@ const Login = () => {
           </div>
 
 
+          {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+
           <button
+            disabled={isSubmitting}
             className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-semibold transition"
           >
-            Login
+            {isSubmitting ? "Logging in..." : "Login"}
           </button>
 
 
@@ -110,7 +127,7 @@ const Login = () => {
 
 
         <p className="text-center mt-6 text-gray-600">
-          Don't have an account?{" "}
+          Don&apos;t have an account?{" "}
           <Link
             to="/register"
             className="text-green-600 font-semibold"

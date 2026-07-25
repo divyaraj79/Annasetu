@@ -1,32 +1,60 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Heart, UserRound, Building2 } from "lucide-react";
+import api, { getApiError } from "../services/api";
 
 const Register = () => {
 
   const navigate = useNavigate();
 
-  const [role, setRole] = useState("Restaurant");
+  const [role, setRole] = useState("restaurant");
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const [formData,setFormData] = useState({
     name:"",
     email:"",
     phone:"",
     password:"",
-    address:""
+    organization_name:"",
+    address:"",
+    latitude:"",
+    longitude:""
   });
 
+  const useCurrentLocation = () => {
+    if (!navigator.geolocation) {
+      setError("Your browser does not support location access.");
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => setFormData({ ...formData, latitude: coords.latitude, longitude: coords.longitude }),
+      () => setError("Location access was denied. Enter latitude and longitude manually.")
+    );
+  };
 
-  const handleSubmit=(e)=>{
+
+  const handleSubmit=async (e)=>{
     e.preventDefault();
+    setError("");
+    setSuccess("");
+    if (formData.password !== confirmPassword) {
+      setError("Password and confirm password must match.");
+      return;
+    }
+    setIsSubmitting(true);
 
-    console.log({
-      ...formData,
-      role
-    });
-
-    // backend later connect
-    navigate("/login");
+    try {
+      await api.post("/auth/register", { ...formData, role, latitude: Number(formData.latitude), longitude: Number(formData.longitude) });
+      setSuccess("Registration completed. You can now log in; donations and needs require admin approval.");
+      setTimeout(() => navigate("/login"), 1500);
+    } catch (requestError) {
+      setError(getApiError(requestError));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
 
@@ -68,10 +96,10 @@ const Register = () => {
 
           <button
           type="button"
-          onClick={()=>setRole("Restaurant")}
+          onClick={()=>setRole("restaurant")}
           className={`p-4 rounded-2xl border flex flex-col items-center gap-2 transition
           ${
-            role==="Restaurant"
+            role==="restaurant"
             ?"border-green-600 bg-green-50 text-green-700"
             :"border-gray-200"
           }`}
@@ -88,10 +116,10 @@ const Register = () => {
 
           <button
           type="button"
-          onClick={()=>setRole("NGO")}
+          onClick={()=>setRole("ngo")}
           className={`p-4 rounded-2xl border flex flex-col items-center gap-2 transition
           ${
-            role==="NGO"
+            role==="ngo"
             ?"border-green-600 bg-green-50 text-green-700"
             :"border-gray-200"
           }`}
@@ -124,6 +152,22 @@ const Register = () => {
           })}
           required
           />
+
+          <input
+          type="text"
+          placeholder={role === "restaurant" ? "Restaurant Name" : "NGO Name"}
+          className="input-style"
+          value={formData.organization_name}
+          onChange={(e)=>setFormData({ ...formData, organization_name:e.target.value })}
+          required
+          />
+
+          <div className="grid grid-cols-2 gap-3">
+            <input type="number" step="any" placeholder="Latitude" className="input-style" value={formData.latitude} onChange={(event)=>setFormData({ ...formData, latitude:event.target.value })} required />
+            <input type="number" step="any" placeholder="Longitude" className="input-style" value={formData.longitude} onChange={(event)=>setFormData({ ...formData, longitude:event.target.value })} required />
+          </div>
+
+          <button type="button" onClick={useCurrentLocation} className="w-full rounded-xl border border-green-700 py-2 font-semibold text-green-700">Use my current location</button>
 
 
 
@@ -171,7 +215,7 @@ const Register = () => {
 
           <input
           type="password"
-          placeholder="Password"
+          placeholder="Password (8-20 characters)"
           className="input-style"
           value={formData.password}
           onChange={(e)=>setFormData({
@@ -181,12 +225,25 @@ const Register = () => {
           required
           />
 
+          <input
+          type="password"
+          placeholder="Confirm password"
+          className="input-style"
+          value={confirmPassword}
+          onChange={(event)=>setConfirmPassword(event.target.value)}
+          required
+          />
 
+
+
+          {error && <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>}
+          {success && <p className="rounded-lg bg-green-50 p-3 text-sm text-green-700">{success}</p>}
 
           <button
+          disabled={isSubmitting}
           className="w-full bg-green-600 hover:bg-green-700 text-white py-3 rounded-xl font-semibold transition"
           >
-            Register as {role}
+            {isSubmitting ? "Submitting..." : `Register as ${role === "restaurant" ? "Restaurant" : "NGO"}`}
           </button>
 
 
