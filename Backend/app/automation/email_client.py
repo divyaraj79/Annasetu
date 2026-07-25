@@ -8,6 +8,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
 import base64
+import os
 from email.header import decode_header
 from email.mime.text import MIMEText
 
@@ -44,6 +45,36 @@ class EmailClient:
 
         self._initialized = True
 
+    def _ensure_credentials_files(self):
+        """
+        Create Gmail credential files from environment
+        variables if they do not already exist.
+        """
+
+        credentials_b64 = os.getenv(
+            "GMAIL_CREDENTIALS_JSON_BASE64"
+        )
+
+        token_b64 = os.getenv(
+            "GMAIL_TOKEN_JSON_BASE64"
+        )
+
+        if (
+            not self.credentials_path.exists()
+            and credentials_b64
+        ):
+            self.credentials_path.write_bytes(
+                base64.b64decode(credentials_b64)
+            )
+
+        if (
+            not self.token_path.exists()
+            and token_b64
+        ):
+            self.token_path.write_bytes(
+                base64.b64decode(token_b64)
+            )
+
 
     def _get_service(self):
 
@@ -61,6 +92,8 @@ class EmailClient:
         and refreshes expired tokens
         automatically.
         """
+
+        self._ensure_credentials_files()
 
         credentials = None
 
@@ -88,17 +121,14 @@ class EmailClient:
 
             else:
 
-                flow = InstalledAppFlow.from_client_secrets_file(
-                    self.credentials_path,
-                    SCOPES,
-                )
-
-                credentials = flow.run_local_server(
-                    port=0
+                raise RuntimeError(
+                    "Missing Gmail credentials. "
+                    "Deploy credentials.json and token.json before starting automation."
                 )
 
             self.token_path.write_text(
-                credentials.to_json()
+                credentials.to_json(),
+                encoding="utf-8",
             )
 
         self.service = build(

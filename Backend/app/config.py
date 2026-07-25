@@ -3,12 +3,24 @@ import os
 
 from pathlib import Path
 
+load_dotenv()
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-CREDENTIALS_PATH = BASE_DIR / "credentials.json"
-TOKEN_PATH = BASE_DIR / "token.json"
+CREDENTIALS_PATH = Path(
+    os.getenv(
+        "GMAIL_CREDENTIALS_PATH",
+        str(BASE_DIR / "credentials.json"),
+    )
+)
 
-load_dotenv()
+TOKEN_PATH = Path(
+    os.getenv(
+        "GMAIL_TOKEN_PATH",
+        str(BASE_DIR / "token.json"),
+    )
+)
+
 
 
 def get_required_env(variable_name: str) -> str:
