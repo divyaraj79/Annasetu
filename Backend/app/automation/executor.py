@@ -9,6 +9,7 @@ from app.automation.automation_service import AutomationService
 
 from app.services.restaurant_service import RestaurantService
 from app.services.match_service import MatchService
+from app.services.ngo_service import NGOService
 
 
 class GraphExecutor:
@@ -33,6 +34,7 @@ class GraphExecutor:
         self.automation = AutomationService(db)
         self.restaurant = RestaurantService(db)
         self.match = MatchService(db)
+        self.ngo = NGOService(db)
 
     def execute(
         self,
@@ -47,6 +49,7 @@ class GraphExecutor:
                 "automation": self.automation,
                 "restaurant": self.restaurant,
                 "match": self.match,
+                "ngo": self.ngo,
             },
         }
 

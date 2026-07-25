@@ -70,6 +70,24 @@ class NGOService:
             .first()
         )
 
+    def get_by_email(
+        self,
+        email: str,
+    ) -> NGO | None:
+
+        return (
+            self.db.query(NGO)
+            .join(User)
+            .filter(
+                User.email == email,
+                User.is_deleted == False,
+                NGO.is_deleted == False,
+                NGO.verification_status
+                == VerificationStatus.APPROVED,
+            )
+            .first()
+        )
+
     def get_all(self) -> list[NGO]:
         return (
             self.db.query(NGO)

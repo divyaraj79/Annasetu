@@ -17,6 +17,15 @@ from app.automation.exceptions import (
     AutomationValidationError,
 )
 
+from app.schemas.need import NeedCreate
+from app.services.need_service import NeedService
+from app.enums.urgency import Urgency
+from app.models.ngo import NGO
+from app.models.donation import Donation
+
+from app.models.need import Need
+from app.enums.status import DonationStatus
+
 
 class AutomationService:
 
@@ -24,6 +33,7 @@ class AutomationService:
         self.db = db
 
         self.donation_service = DonationService(db)
+        self.need_service = NeedService(db)
         self.donation_item_service = DonationItemService(db)
         self.matching_service = MatchingService(db)
         self.lifecycle_service = LifecycleService(db)
@@ -105,7 +115,88 @@ class AutomationService:
             donation,
         )
 
+        self.lifecycle_service.notify_next_match(
+            donation,
+        )
+
         return donation
+
+    def create_need(
+        self,
+        ngo: NGO,
+        need_data: dict,
+    ):
+        """
+        Create an NGO need.
+        """
+
+        required_fields = {
+            "preferred_category": "Food Category",
+            "vegetarian_only": "Vegetarian Preference",
+            "quantity_required": "Quantity",
+            "quantity_unit": "Quantity Unit",
+            "urgency": "Urgency",
+        }
+
+        for field, display_name in required_fields.items():
+
+            if need_data.get(field) in (None, ""):
+
+                raise AutomationValidationError(
+                    f"{display_name} is missing."
+                )
+
+        try:
+
+            need_schema = NeedCreate(
+                ngo_id=ngo.id,
+                **need_data,
+            )
+
+        except Exception:
+
+            raise AutomationValidationError(
+                "The food need could not be understood. Please review the email and send it again."
+            )
+
+        need = self.need_service.create(
+            need_schema,
+        )
+
+        return need
+
+    def process_new_need(
+        self,
+        need: Need,
+    ):
+        """
+        Re-run matching for all active donations
+        after a new NGO need is created.
+        """
+
+        donations = (
+            self.db.query(Donation)
+            .filter(
+                Donation.is_deleted == False,
+                Donation.status.in_(
+                    [
+                        DonationStatus.MATCHING,
+                        DonationStatus.UNMATCHED,
+                    ]
+                )
+            )
+            .all()
+        )
+
+        for donation in donations:
+
+            self.matching_service.create_matches(
+                donation,
+            )
+
+            self.lifecycle_service.notify_next_match(
+                donation,
+            )
 
     def accept_match(
         self,

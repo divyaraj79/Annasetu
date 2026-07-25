@@ -5,7 +5,7 @@ from app.automation.scheduler import Scheduler
 
 # Testing interval
 # SCHEDULER_INTERVAL = 600  # 10 minutes
-SCHEDULER_INTERVAL = 160  # 20 seconds
+SCHEDULER_INTERVAL = 160  # 2 min 40 seconds
 
 
 async def scheduler_runner():

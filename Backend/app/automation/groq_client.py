@@ -8,6 +8,7 @@ from groq import Groq
 from app.automation.prompts.groq_prompts import (
     DONATION_EXTRACTION_PROMPT,
     NGO_REPLY_PROMPT,
+    NEED_EXTRACTION_PROMPT,
 )
 
 
@@ -16,7 +17,24 @@ load_dotenv()
 
 class GroqClient:
 
+    _instance = None
+
+    def __new__(cls):
+
+        if cls._instance is None:
+
+            cls._instance = super().__new__(cls)
+            cls._instance.client = None
+            cls._instance.model = None
+
+        return cls._instance
+
     def __init__(self):
+        if getattr(self, "_initialized", False):
+            return
+
+        if self.client is not None:
+            return
 
         api_key = os.getenv("GROQ_API_KEY")
 
@@ -30,6 +48,8 @@ class GroqClient:
         )
 
         self.model = "llama-3.3-70b-versatile"
+
+        self._initialized = True
 
     def _chat(
         self,
@@ -72,6 +92,23 @@ class GroqClient:
 
         response = self._chat(
             prompt=DONATION_EXTRACTION_PROMPT,
+            message=email_body,
+            temperature=0,
+        )
+
+        return json.loads(response)
+
+    def extract_need(
+        self,
+        email_body: str,
+    ) -> dict:
+        """
+        Extract structured NGO need
+        information.
+        """
+
+        response = self._chat(
+            prompt=NEED_EXTRACTION_PROMPT,
             message=email_body,
             temperature=0,
         )

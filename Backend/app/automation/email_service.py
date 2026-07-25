@@ -33,42 +33,56 @@ class EmailService:
     # Incoming Emails
     # --------------------------------------------------
 
-    def fetch_restaurant_emails(
-        self,
-    ) -> list[dict]:
-        """
-        Fetch unread restaurant
-        donation emails.
-        """
-
-        emails = (
-            self.email_client.fetch_unread_messages()
-        )
-
-        return [
-            email
-            for email in emails
-            if email["subject"].strip() == DONATION_EMAIL
-        ]
-
-    def fetch_ngo_replies(
-        self,
-    ) -> list[dict]:
-        """
-        Fetch unread NGO reply emails.
-        """
-
-        emails = (
-            self.email_client.fetch_unread_messages()
-        )
-
-        return [
-            email
-            for email in emails
-            if email["subject"].strip().startswith(
-                f"Re: {NGO_NOTIFICATION}"
+    def fetch_unread_emails(
+            self,
+        ) -> list[dict]:
+            """
+            Fetch every unread email.
+    
+            LangGraph will determine
+            what type of email it is.
+            """
+    
+            return (
+                self.email_client.fetch_unread_messages()
             )
-        ]
+    
+    # def fetch_restaurant_emails(
+    #     self,
+    # ) -> list[dict]:
+    #     """
+    #     Fetch unread restaurant
+    #     donation emails.
+    #     """
+
+    #     emails = (
+    #         self.email_client.fetch_unread_messages()
+    #     )
+
+    #     return [
+    #         email
+    #         for email in emails
+    #         if email["subject"].strip() == DONATION_EMAIL
+    #     ]
+
+    # def fetch_ngo_replies(
+    #     self,
+    # ) -> list[dict]:
+    #     """
+    #     Fetch unread NGO reply emails.
+    #     """
+
+    #     emails = (
+    #         self.email_client.fetch_unread_messages()
+    #     )
+
+    #     return [
+    #         email
+    #         for email in emails
+    #         if email["subject"].strip().startswith(
+    #             f"Re: {NGO_NOTIFICATION}"
+    #         )
+    #     ]
 
     # --------------------------------------------------
     # Outgoing Emails
@@ -168,18 +182,4 @@ class EmailService:
 
         self.email_client.mark_as_read(
             message_id
-        )
-
-    def fetch_unread_emails(
-        self,
-    ) -> list[dict]:
-        """
-        Fetch every unread email.
-
-        LangGraph will determine
-        what type of email it is.
-        """
-
-        return (
-            self.email_client.fetch_unread_messages()
         )

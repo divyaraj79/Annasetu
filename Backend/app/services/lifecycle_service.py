@@ -26,10 +26,23 @@ class LifecycleService:
 
         self.email_service = EmailService()
 
-    def _notify_next_match(
+    def notify_next_match(
         self,
         donation: Donation,
     ) -> Match | None:
+        existing_notification = (
+            self.db.query(Match)
+            .filter(
+                Match.donation_id == donation.id,
+                Match.status == MatchStatus.NOTIFIED,
+                Match.is_deleted == False,
+            )
+            .first()
+        )
+
+        if existing_notification:
+            return existing_notification
+        
         next_match = (
             self.db.query(Match)
             .filter(
@@ -158,7 +171,7 @@ class LifecycleService:
             reason,
         )
 
-        return self._notify_next_match(
+        return self.notify_next_match(
             match.donation
         )
     
@@ -186,7 +199,7 @@ class LifecycleService:
             match.ngo,
         )
 
-        return self._notify_next_match(
+        return self.notify_next_match(
             match.donation,
         )
     

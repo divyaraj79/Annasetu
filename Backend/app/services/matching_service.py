@@ -27,6 +27,14 @@ class MatchingService:
         self,
         donation: Donation,
     ) -> list[Match]:
+
+        if donation.status not in (
+            DonationStatus.CREATED,
+            DonationStatus.MATCHING,
+            DonationStatus.UNMATCHED,
+        ):
+            return []
+        
         ngos = (
             self.db.query(NGO)
             .filter(
@@ -41,9 +49,18 @@ class MatchingService:
             ngos,
         )
 
+        existing_matches = (
+            self.db.query(Match)
+            .filter(
+                Match.donation_id == donation.id,
+            )
+            .count()
+        )
+
         if not ranked_ngos:
 
-            donation.status = DonationStatus.UNMATCHED
+            if existing_matches == 0:
+                donation.status = DonationStatus.UNMATCHED
 
             # TODO:
             # Notify restaurant that no NGO
@@ -53,11 +70,32 @@ class MatchingService:
         
         matches = []
 
+        existing_ngo_ids = {
+            match.ngo_id
+            for match in donation.matches
+                if not match.is_deleted
+        }
+        ranked_ngos = [
+            (ngo, score)
+            for ngo, score in ranked_ngos
+                if ngo.id not in existing_ngo_ids
+        ]
+
+        
+        existing_matches = (
+            self.db.query(Match)
+            .filter(
+                Match.donation_id == donation.id,
+            )
+            .count()
+        )
+
+        start_attempt = existing_matches + 1
+
         for attempt_number, (ngo, score) in enumerate(
             ranked_ngos,
-            start=1,
+            start=start_attempt,
         ):
-
             match = self.match_service.create(
                 MatchCreate(
                     donation_id=donation.id,
@@ -69,16 +107,7 @@ class MatchingService:
 
             matches.append(match)
 
-        donation.status = DonationStatus.MATCHING
-
-        if matches:
-            self.match_service.mark_as_notified(
-                matches[0]
-            )
-            
-            self.email_service.send_match_notification(
-                donation,
-                matches[0],
-            )
+        if donation.status == DonationStatus.CREATED:
+            donation.status = DonationStatus.MATCHING
 
         return matches

@@ -1,6 +1,7 @@
 from email.utils import parseaddr
 
 from app.automation.state import AutomationState
+from app.automation.exceptions import AutomationValidationError
 
 
 def sender_validation_node(
@@ -17,7 +18,7 @@ def sender_validation_node(
     )[1]
 
     if sender != state["match"].ngo.user.email:
-        raise ValueError(
+        raise AutomationValidationError(
             "Reply does not belong to the assigned NGO."
         )
 

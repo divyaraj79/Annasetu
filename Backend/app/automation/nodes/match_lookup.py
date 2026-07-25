@@ -1,6 +1,7 @@
 from uuid import UUID
 
 from app.automation.state import AutomationState
+from app.automation.exceptions import AutomationValidationError
 
 
 def match_lookup_node(
@@ -22,8 +23,8 @@ def match_lookup_node(
     )
 
     if match is None:
-        raise ValueError(
-            "Match not found."
+        raise AutomationValidationError(
+            "Invalid or unknown Reference ID."
         )
 
     state["match"] = match

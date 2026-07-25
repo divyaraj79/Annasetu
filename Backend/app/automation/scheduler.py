@@ -18,6 +18,9 @@ from app.automation.exceptions import (
     AutomationValidationError,
 )
 
+from app.automation.email_templates import DONATION_EMAIL
+from email.utils import parseaddr
+
 
 MATCH_RESPONSE_TIMEOUT = timedelta(minutes=30)
 
@@ -46,9 +49,7 @@ class Scheduler:
 
             self._check_donation_expiry()
 
-            self._process_restaurant_emails()
-
-            self._process_ngo_replies()
+            self._process_unread_emails()
 
             self.db.commit()
 
@@ -111,16 +112,19 @@ class Scheduler:
                     donation
                 )
 
-    def _process_restaurant_emails(
+    def _process_unread_emails(
         self,
     ) -> None:
         """
-        Process unread restaurant emails.
+        Process every unread email.
+
+        LangGraph decides what type of
+        email it is.
         """
 
         emails = (
             self.email_service
-            .fetch_restaurant_emails()
+            .fetch_unread_emails()
         )
 
         for email in emails:
@@ -131,58 +135,40 @@ class Scheduler:
 
             except AutomationValidationError as exc:
                 print(
-                    f"Restaurant validation failed: {exc.message}"
-                )
-                try:
-                    self.email_service.send_donation_validation_failed(
-                        recipient=email["from"],
-                        reason=exc.message,
-                    )
-                    self.email_service.mark_email_as_read(
-                        email["id"],
-                    )
-
-                except Exception as send_exc:
-                    print(
-                        f"Failed to send correction email: {send_exc}"
-                    )
-                continue
-
-            except Exception as exc:
-                print(
-                    f"Restaurant processing failed: {exc}"
-                )
-                continue
-
-    def _process_ngo_replies(
-        self,
-    ) -> None:
-        """
-        Process unread NGO replies.
-        """
-
-        emails = (
-            self.email_service
-            .fetch_ngo_replies()
-        )
-
-        for email in emails:
-            try:
-                self.executor.execute(
-                    email,
+                    f"Validation failed: {exc.message}"
                 )
 
-            except AutomationValidationError as exc:
-                print(
-                    f"NGO validation failed: {exc}"
+                # Only restaurant donation
+                # validation errors receive a
+                # correction email.
+
+                subject = (
+                    " ".join(email["subject"].split())
+                    .lower()
                 )
+
+                if (
+                    subject
+                    == DONATION_EMAIL.lower()
+                ):
+                    try:
+                        recipient = parseaddr(email["from"])[1]
+                        
+                        self.email_service.send_donation_validation_failed(
+                            recipient=recipient,
+                            reason=exc.message,
+                        )
+
+                    except Exception as send_exc:
+                        print(
+                            f"Failed to send correction email: {send_exc}"
+                        )
+
                 self.email_service.mark_email_as_read(
-                    email["id"]
+                    email["id"],
                 )
-                continue
 
             except Exception as exc:
                 print(
-                    f"NGO processing failed: {exc}"
+                    f"Email processing failed: {exc}"
                 )
-                continue

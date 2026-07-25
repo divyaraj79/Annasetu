@@ -33,6 +33,8 @@ DONATION_VALIDATION_FAILED = (
     "Donation Could Not Be Processed"
 )
 
+NEED_EMAIL = "Food Need"
+
 
 # --------------------------------------------------
 # Templates

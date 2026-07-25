@@ -43,6 +43,22 @@ from app.automation.nodes.reply_action import (
     reply_action_node,
 )
 
+from app.automation.nodes.ngo_validation import (
+    ngo_validation_node,
+)
+
+from app.automation.nodes.need_extraction import (
+    need_extraction_node,
+)
+
+from app.automation.nodes.need_creation import (
+    need_creation_node,
+)
+
+from app.automation.nodes.need_matching import (
+    need_matching_node,
+)
+
 
 def route_email(
     state: AutomationState,
@@ -85,6 +101,26 @@ builder.add_node(
 )
 
 builder.add_node(
+    "ngo_validation",
+    ngo_validation_node,
+)
+
+builder.add_node(
+    "need_extraction",
+    need_extraction_node,
+)
+
+builder.add_node(
+    "need_creation",
+    need_creation_node,
+)
+
+builder.add_node(
+    "need_matching",
+    need_matching_node,
+)
+
+builder.add_node(
     "match_lookup",
     match_lookup_node,
 )
@@ -121,7 +157,8 @@ builder.add_conditional_edges(
     route_email,
     {
         "restaurant": "restaurant_validation",
-        "ngo": "reply_extraction",
+        "ngo_need": "ngo_validation",
+        "ngo_reply": "reply_extraction",
         "ignore": END,
     },
 )
@@ -168,6 +205,26 @@ builder.add_edge(
 builder.add_edge(
     "mark_read",
     END,
+)
+
+builder.add_edge(
+    "ngo_validation",
+    "need_extraction",
+)
+
+builder.add_edge(
+    "need_extraction",
+    "need_creation",
+)
+
+builder.add_edge(
+    "need_creation",
+    "need_matching",
+)
+
+builder.add_edge(
+    "need_matching",
+    "mark_read",
 )
 
 automation_graph = builder.compile()
