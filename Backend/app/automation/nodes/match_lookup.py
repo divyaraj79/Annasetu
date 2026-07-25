@@ -1,7 +1,9 @@
 from uuid import UUID
 
 from app.automation.state import AutomationState
-from app.automation.exceptions import AutomationValidationError
+from app.automation.exceptions import (
+    AutomationValidationError,
+)
 
 
 def match_lookup_node(
@@ -16,10 +18,27 @@ def match_lookup_node(
         state["services"]["match"]
     )
 
-    match = match_service.get_by_id(
-        UUID(
-            state["reply_data"]["reference_id"]
+    reference_id = (
+        state["reply_data"].get(
+            "reference_id"
         )
+    )
+
+    try:
+        match_id = UUID(
+            reference_id
+        )
+
+    except (
+        TypeError,
+        ValueError,
+    ):
+        raise AutomationValidationError(
+            "Invalid or missing Reference ID."
+        )
+
+    match = match_service.get_by_id(
+        match_id,
     )
 
     if match is None:

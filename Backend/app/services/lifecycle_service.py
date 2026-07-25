@@ -61,13 +61,15 @@ class LifecycleService:
 
         if not next_match:
 
-            self.donation_service.mark_as_unmatched(
-                donation,
-            )
+            if donation.status == DonationStatus.MATCHING:
 
-            self.email_service.send_donation_unmatched(
-                donation.restaurant,
-            )
+                self.donation_service.mark_as_unmatched(
+                    donation,
+                )
+
+                self.email_service.send_donation_unmatched(
+                    donation.restaurant,
+                )
 
             return None
         

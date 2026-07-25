@@ -11,6 +11,11 @@ import base64
 from email.header import decode_header
 from email.mime.text import MIMEText
 
+from app.config import (
+    CREDENTIALS_PATH,
+    TOKEN_PATH,
+)
+
 
 SCOPES = [
     "https://www.googleapis.com/auth/gmail.modify",
@@ -32,8 +37,8 @@ class EmailClient:
         if getattr(self, "_initialized", False):
             return
 
-        self.credentials_path = Path("credentials.json")
-        self.token_path = Path("token.json")
+        self.credentials_path = CREDENTIALS_PATH
+        self.token_path = TOKEN_PATH
 
         self.service = None
 
@@ -149,45 +154,49 @@ class EmailClient:
         payload: dict,
     ) -> str:
         """
-        Extract plain text body
-        from a Gmail message.
+        Recursively extract the first
+        plain-text body from a Gmail message.
         """
 
-        body = ""
+        mime_type = payload.get(
+            "mimeType",
+            ""
+        )
 
-        if "parts" in payload:
-
-            for part in payload["parts"]:
-
-                if part.get("mimeType") == "text/plain":
-
-                    data = (
-                        part["body"]
-                        .get("data")
-                    )
-
-                    if data:
-
-                        body = base64.urlsafe_b64decode(
-                            data
-                        ).decode()
-
-                        break
-
-        else:
+        if mime_type == "text/plain":
 
             data = (
-                payload["body"]
-                .get("data")
+                payload.get(
+                    "body",
+                    {}
+                ).get("data")
             )
 
             if data:
 
-                body = base64.urlsafe_b64decode(
+                return base64.urlsafe_b64decode(
                     data
-                ).decode()
+                ).decode(
+                    "utf-8",
+                    errors="replace",
+                )
 
-        return body
+            return ""
+
+        for part in payload.get(
+            "parts",
+            [],
+        ):
+
+            body = self._extract_body(
+                part,
+            )
+
+            if body:
+
+                return body
+
+        return ""
 
 
     def get_message(

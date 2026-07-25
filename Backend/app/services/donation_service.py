@@ -76,10 +76,6 @@ class DonationService:
         # Geocode pickup_address and automatically
         # populate latitude and longitude.
 
-        # TODO:
-        # Trigger LangGraph workflow after
-        # successful donation creation.
-
         self.db.add(donation)
 
         self.db.flush()

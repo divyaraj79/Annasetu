@@ -99,7 +99,15 @@ class Scheduler:
             self.db.query(Donation)
             .filter(
                 Donation.is_deleted == False,
-                Donation.status != DonationStatus.EXPIRED,
+                Donation.status.in_(
+                    [
+                        DonationStatus.CREATED,
+                        DonationStatus.MATCHING,
+                        DonationStatus.PENDING,
+                        DonationStatus.UNMATCHED,
+                        DonationStatus.ACCEPTED,
+                    ]
+                ),
             )
             .all()
         )
@@ -153,7 +161,7 @@ class Scheduler:
                 ):
                     try:
                         recipient = parseaddr(email["from"])[1]
-                        
+
                         self.email_service.send_donation_validation_failed(
                             recipient=recipient,
                             reason=exc.message,

@@ -159,7 +159,7 @@ builder.add_conditional_edges(
         "restaurant": "restaurant_validation",
         "ngo_need": "ngo_validation",
         "ngo_reply": "reply_extraction",
-        "ignore": END,
+        "ignore": "mark_read",
     },
 )
 
