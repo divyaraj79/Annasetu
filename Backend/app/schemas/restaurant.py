@@ -12,6 +12,8 @@ class RestaurantCreate(BaseModel):
     user_id: UUID
     restaurant_name: str
     address: str
+    latitude: float | None = None
+    longitude: float | None = None
 
     @field_validator("restaurant_name")
     @classmethod
@@ -59,6 +61,8 @@ class RestaurantCreate(BaseModel):
 class RestaurantUpdate(BaseModel):
     restaurant_name: str | None = None
     address: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
 
     @field_validator("restaurant_name")
     @classmethod
