@@ -1,3 +1,4 @@
+from math import asin, cos, radians, sin, sqrt
 from uuid import UUID
 
 from sqlalchemy.orm import Session
@@ -7,6 +8,7 @@ from datetime import datetime, timezone
 from app.models.match import Match
 from app.models.donation import Donation
 from app.models.ngo import NGO
+from app.models.need import Need
 
 from app.schemas.match import MatchCreate, MatchUpdate
 
@@ -73,23 +75,22 @@ class MatchService:
 
         if existing_match:
             raise ValueError(
-                "A match already exists for this donation and NGO."
+                "A match already exists for this donation andNGO."
             )
 
-        # TODO:
-        # Calculate actual distance using
-        # Donation and NGO coordinates.
-        distance_km = 0.0
+        distance_km = self._distance_km(donation, ngo)
+        if distance_km is None:
+            raise ValueError("Both the donation and NGO must have location coordinates.")
 
         match = Match(
             donation_id=match_data.donation_id,
             ngo_id=match_data.ngo_id,
-            score=score,
+            score=score if score is not None else self._match_score(donation, ngo, distance_km),
             distance_km=distance_km,
             status=MatchStatus.PENDING,
-            notified_at = None,
+            notified_at=None,
             attempt_number=attempt_number,
-            match_reason=None,
+            match_reason=f"Nearby food match at {distance_km:.1f} km.",
         )
 
         self.db.add(match)
@@ -99,6 +100,86 @@ class MatchService:
         self.db.refresh(match)
 
         return match
+
+    def create_nearby_matches(self, donation: Donation) -> list[Match]:
+        needs = (
+            self.db.query(Need)
+            .filter(Need.is_deleted == False)
+            .all()
+        )
+        matches = []
+        matched_ngo_ids = set()
+
+        for need in needs:
+            if need.ngo_id in matched_ngo_ids:
+                continue
+            if need.preferred_category != donation.food_category:
+                continue
+            if need.vegetarian_only and not donation.is_vegetarian:
+                continue
+
+            ngo = need.ngo
+            if ngo.is_deleted or ngo.verification_status != VerificationStatus.APPROVED:
+                continue
+
+            distance_km = self._distance_km(donation, ngo)
+            if distance_km is None:
+                continue
+
+            existing_match = (
+                self.db.query(Match)
+                .filter(
+                    Match.donation_id == donation.id,
+                    Match.ngo_id == ngo.id,
+                )
+                .first()
+            )
+            if existing_match:
+                continue
+
+            match = Match(
+                donation_id=donation.id,
+                ngo_id=ngo.id,
+                score=self._match_score(donation, ngo, distance_km),
+                distance_km=distance_km,
+                status=MatchStatus.PENDING,
+                attempt_number=1,
+                match_reason=(
+                    f"{donation.food_category.value.replace('_', ' ')} food is "
+                    f"available {distance_km:.1f} km away."
+                ),
+            )
+            self.db.add(match)
+            matches.append(match)
+            matched_ngo_ids.add(need.ngo_id)
+
+        return matches
+
+    @staticmethod
+    def _distance_km(donation: Donation, ngo: NGO) -> float |None:
+        coordinates = (
+            donation.latitude,
+            donation.longitude,
+            ngo.latitude,
+            ngo.longitude,
+        )
+        if any(value is None for value in coordinates):
+            return None
+
+        latitude_1, longitude_1, latitude_2, longitude_2 = map(radians, coordinates)
+        latitude_delta = latitude_2 - latitude_1
+        longitude_delta = longitude_2 - longitude_1
+        haversine = (
+            sin(latitude_delta / 2) ** 2
+            + cos(latitude_1) * cos(latitude_2) * sin(longitude_delta / 2) ** 2
+        )
+        return round(6371 * 2 * asin(sqrt(haversine)), 2)
+
+    @staticmethod
+    def _match_score(donation: Donation, ngo: NGO, distance_km: float) -> float:
+        quantity_score = min(donation.quantity / 100, 1) * 20
+        distance_score = max(0, 60 - distance_km) / 60 * 80
+        return round(quantity_score + distance_score, 2)
 
     def get_by_id(self, match_id: UUID) -> Match | None:
         return (
@@ -130,19 +211,19 @@ class MatchService:
 
         update_data = match_data.model_dump(exclude_unset=True)
 
-        if "status" in update_data:
-            raise ValueError(
-                "Match status can only be changed through workflow actions."
-            )
-        
-        # TODO:
-        # Replace this restriction with a proper
-        # workflow/state machine when the
-        # automation engine is implemented.
-
         # Completed matches cannot be modified
         if match.status == MatchStatus.COMPLETED:
             raise ValueError("Completed matches cannot be updated.")
+
+        if "status" in update_data:
+            allowed_statuses = {
+                MatchStatus.PENDING: {MatchStatus.INTERESTED,MatchStatus.REJECTED},
+                MatchStatus.INTERESTED: {MatchStatus.ACCEPTED, MatchStatus.REJECTED},
+                MatchStatus.ACCEPTED: {MatchStatus.COMPLETED},
+            }
+            allowed = allowed_statuses.get(match.status, set())
+            if update_data["status"] not in allowed:
+                raise ValueError("This match status change isnot allowed.")
 
         # TODO:
         # After authentication,

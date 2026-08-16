@@ -19,7 +19,11 @@ class UserService:
     #     return user
 
 
-    def create(self, user_data: UserCreate) -> User:
+    def create(
+        self,
+        user_data: UserCreate,
+        password_hash: str,
+    ) -> User:
         existing_user = (
             self.db.query(User)
             .filter(
@@ -34,7 +38,10 @@ class UserService:
         if existing_user:
             raise ValueError("Email or phone already registered.")
 
-        user = User(**user_data.model_dump())
+        user = User(
+            **user_data.model_dump(),
+            password_hash=password_hash,
+        )
 
         self.db.add(user)
 

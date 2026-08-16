@@ -13,6 +13,8 @@ class NGOCreate(BaseModel):
     user_id: UUID
     ngo_name: str
     address: str
+    latitude: float | None = None
+    longitude: float | None = None
 
     @field_validator("ngo_name")
     @classmethod
@@ -60,6 +62,8 @@ class NGOCreate(BaseModel):
 class NGOUpdate(BaseModel):
     ngo_name: str | None = None
     address: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
 
     @field_validator("ngo_name")
     @classmethod

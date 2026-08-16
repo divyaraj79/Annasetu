@@ -15,6 +15,8 @@ class RegistrationRequest(BaseModel):
     role: UserRole
     organization_name: str
     address: str
+    latitude: float | None = None
+    longitude: float | None = None
 
     @field_validator("name")
     @classmethod
