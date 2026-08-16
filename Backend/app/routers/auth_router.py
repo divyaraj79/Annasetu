@@ -13,6 +13,8 @@ from app.schemas.user import UserResponse
 
 from app.services.registration_service import RegistrationService
 from app.auth.login_service import LoginService
+from app.auth.dependencies import get_current_user
+from app.models.user import User
 
 router = APIRouter(
     prefix="/auth",
@@ -64,3 +66,8 @@ def login(
 
     except Exception:
         raise
+
+
+@router.get("/me", response_model=UserResponse)
+def get_me(current_user: User = Depends(get_current_user)):
+    return current_user

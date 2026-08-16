@@ -8,6 +8,7 @@ from app.models.restaurant import Restaurant
 from app.schemas.donation import DonationCreate, DonationUpdate
 from app.enums.verification_status import VerificationStatus
 from app.enums.status import DonationStatus
+from app.services.match_service import MatchService
 
 from app.automation.exceptions import (
     AutomationValidationError,
@@ -79,6 +80,10 @@ class DonationService:
         self.db.add(donation)
 
         self.db.flush()
+
+        matches = MatchService(self.db).create_nearby_matches(donation)
+        if matches:
+            donation.status = DonationStatus.MATCHING
 
         self.db.refresh(donation)
 

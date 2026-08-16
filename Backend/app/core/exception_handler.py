@@ -36,10 +36,18 @@ def register_exception_handlers(app: FastAPI):
         request: Request,
         exc: IntegrityError,
     ):
+        message = str(exc.orig).lower()
+        if "email" in message:
+            detail = "This email is already registered. Please log in instead."
+        elif "phone" in message:
+            detail = "This phone number is already registered."
+        else:
+            detail = "Could not save your registration. Please check the form details."
+
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
             content={
-                "detail": "Database constraint violated.",
+                "detail": detail,
             },
         )
 
