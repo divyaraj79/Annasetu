@@ -74,6 +74,14 @@ class RestaurantService:
         self.db.flush()
         self.db.refresh(restaurant)
 
+        # Send approval email
+        try:
+            self.email_service.send_restaurant_registration_approval(
+                restaurant
+            )
+        except Exception as exc:
+            print(f"Failed to send approval email: {exc}")
+
         return restaurant
 
     def get_by_id(self, restaurant_id: UUID) -> Restaurant | None:    

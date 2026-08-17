@@ -73,6 +73,14 @@ class NGOService:
         self.db.flush()
         self.db.refresh(ngo)
 
+        # Send approval email
+        try:
+            self.email_service.send_ngo_registration_approval(
+                ngo
+            )
+        except Exception as exc:
+            print(f"Failed to send approval email: {exc}")
+
         return ngo
 
     def get_by_id(self, ngo_id: UUID) -> NGO | None:
