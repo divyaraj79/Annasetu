@@ -9,11 +9,13 @@ from app.enums.roles import UserRole
 from app.enums.verification_status import VerificationStatus
 
 from app.services.geocoding_service import geocode_address
+from app.automation.email_service import EmailService
 
 
 class RestaurantService:
     def __init__(self, db: Session):
         self.db = db
+        self.email_service = EmailService()
 
     def create(self, restaurant_data: RestaurantCreate) -> Restaurant:
         # Check if user exists
