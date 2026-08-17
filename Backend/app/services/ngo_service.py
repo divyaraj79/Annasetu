@@ -8,6 +8,7 @@ from app.schemas.ngo import NGOCreate, NGOUpdate
 from app.enums.roles import UserRole
 from app.enums.verification_status import VerificationStatus
 
+from app.services.geocoding_service import geocode_address
 
 class NGOService:
     def __init__(self, db: Session):
@@ -45,8 +46,22 @@ class NGOService:
         if existing_ngo:
             raise ValueError("NGO profile already exists for this user.")
 
+        ngo_values = ngo_data.model_dump()
+
+        latitude, longitude = geocode_address(
+            ngo_values["address"]
+        )
+
+        ngo_values["latitude"] = latitude
+        ngo_values["longitude"] = longitude
+
+        # ngo = NGO(
+        #     **ngo_data.model_dump(),
+        #     verification_status=VerificationStatus.APPROVED
+        # )
+
         ngo = NGO(
-            **ngo_data.model_dump(),
+            **ngo_values,
             verification_status=VerificationStatus.APPROVED
         )
 
@@ -115,6 +130,13 @@ class NGOService:
             )
 
         update_data = ngo_data.model_dump(exclude_unset=True)
+
+        if "address" in update_data:
+            latitude, longitude = geocode_address(
+                update_data["address"]
+            )
+            update_data["latitude"] = latitude
+            update_data["longitude"] = longitude
 
         for field, value in update_data.items():
             setattr(ngo, field, value)

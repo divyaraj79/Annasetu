@@ -8,6 +8,8 @@ from app.schemas.restaurant import RestaurantCreate, RestaurantUpdate
 from app.enums.roles import UserRole
 from app.enums.verification_status import VerificationStatus
 
+from app.services.geocoding_service import geocode_address
+
 
 class RestaurantService:
     def __init__(self, db: Session):
@@ -45,8 +47,22 @@ class RestaurantService:
         if existing_restaurant:
             raise ValueError("Restaurant profile already exists for this user.")
 
+        restaurant_values = restaurant_data.model_dump()
+
+        latitude, longitude = geocode_address(
+            restaurant_values["address"]
+        )
+
+        restaurant_values["latitude"] = latitude
+        restaurant_values["longitude"] = longitude
+
+        # restaurant = Restaurant(
+        #     **restaurant_data.model_dump(),
+        #     verification_status=VerificationStatus.APPROVED
+        # )
+
         restaurant = Restaurant(
-            **restaurant_data.model_dump(),
+            **restaurant_values,
             verification_status=VerificationStatus.APPROVED
         )
 
@@ -116,6 +132,13 @@ class RestaurantService:
             )
 
         update_data = restaurant_data.model_dump(exclude_unset=True)
+
+        if "address" in update_data:
+            latitude, longitude = geocode_address(
+                update_data["address"]
+            )
+            update_data["latitude"] = latitude
+            update_data["longitude"] = longitude
 
         for field, value in update_data.items():
             setattr(restaurant, field, value)

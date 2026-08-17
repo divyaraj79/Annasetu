@@ -19,6 +19,8 @@ from app.automation.exceptions import (
     AutomationValidationError,
 )
 
+from app.services.geocoding_service import geocode_address
+
 
 class DonationService:
     def __init__(self, db: Session):
@@ -76,14 +78,24 @@ class DonationService:
                     "Food expiry cannot exceed 20 hours after cooking."
                 )
 
-        donation = Donation(
-            **donation_data.model_dump(),
-            status=DonationStatus.CREATED,
+        # donation = Donation(
+        #     **donation_data.model_dump(),
+        #     status=DonationStatus.CREATED,
+        # )
+
+        donation_values = donation_data.model_dump()
+
+        latitude, longitude = geocode_address(
+            donation_values["pickup_address"]
         )
 
-        # TODO:
-        # Geocode pickup_address and automatically
-        # populate latitude and longitude.
+        donation_values["latitude"] = latitude
+        donation_values["longitude"] = longitude
+
+        donation = Donation(
+            **donation_values,
+            status=DonationStatus.CREATED,
+        )
 
         self.db.add(donation)
 
@@ -170,14 +182,12 @@ class DonationService:
             
         
 
-        # TODO:
-        # After authentication is implemented,
-        # ensure only the donation owner
-        # (or an admin) can update this donation.
-        #
-        # If pickup_address changes,
-        # automatically geocode the address
-        # and update latitude & longitude.
+        if "pickup_address" in update_data:
+            latitude, longitude = geocode_address(
+                update_data["pickup_address"]
+            )
+            update_data["latitude"] = latitude
+            update_data["longitude"] = longitude
 
         for field, value in update_data.items():
             setattr(donation, field, value)
