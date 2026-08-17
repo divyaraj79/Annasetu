@@ -47,8 +47,8 @@ class RegistrationService:
                     email=registration_data.email,
                     phone=registration_data.phone,
                     role=registration_data.role,
+                    password_hash=hashed_password,
 ),
-                password_hash=hashed_password,
             )
 
             if registration_data.role == UserRole.RESTAURANT:

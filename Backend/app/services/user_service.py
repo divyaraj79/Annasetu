@@ -19,10 +19,42 @@ class UserService:
     #     return user
 
 
+    # def create(
+    #     self,
+    #     user_data: UserCreate,
+    #     password_hash: str,
+    # ) -> User:
+    #     existing_user = (
+    #         self.db.query(User)
+    #         .filter(
+    #             or_(
+    #                 User.email == user_data.email,
+    #                 User.phone == user_data.phone,
+    #             )
+    #         )
+    #         .first()
+    #     )
+
+    #     if existing_user:
+    #         raise ValueError("Email or phone already registered.")
+
+    #     user = User(
+    #         **user_data.model_dump(),
+    #         password_hash=password_hash,
+    #     )
+
+    #     self.db.add(user)
+
+    #     self.db.flush()
+
+    #     self.db.refresh(user)
+
+    #     return user
+
+    # i am adding this below def create as of 17 august 
     def create(
         self,
         user_data: UserCreate,
-        password_hash: str,
     ) -> User:
         existing_user = (
             self.db.query(User)
@@ -40,7 +72,6 @@ class UserService:
 
         user = User(
             **user_data.model_dump(),
-            password_hash=password_hash,
         )
 
         self.db.add(user)
@@ -50,6 +81,7 @@ class UserService:
         self.db.refresh(user)
 
         return user
+
 
     def get_by_id(self, user_id: UUID) -> User | None:
         return (
