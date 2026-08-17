@@ -12,7 +12,7 @@ from app.enums.status import DonationStatus
 from app.services.match_service import MatchService
 from app.services.ranking_service import RankingService
 
-from app.automation.email_service import EmailService
+# from app.automation.email_service import EmailService
 
 class MatchingService:
 
@@ -21,7 +21,7 @@ class MatchingService:
 
         self.match_service = MatchService(db)
         self.ranking_service = RankingService()
-        self.email_service = EmailService()
+        # self.email_service = EmailService()
 
     def create_matches(
         self,
@@ -57,15 +57,23 @@ class MatchingService:
             .count()
         )
 
+        # if not ranked_ngos:
+
+        #     if existing_matches == 0:
+
+        #         donation.status = DonationStatus.UNMATCHED
+
+        #         self.email_service.send_donation_unmatched(
+        #             donation.restaurant,
+        #         )
+
+        #     return []
+
+
         if not ranked_ngos:
 
             if existing_matches == 0:
-
                 donation.status = DonationStatus.UNMATCHED
-
-                self.email_service.send_donation_unmatched(
-                    donation.restaurant,
-                )
 
             return []
         

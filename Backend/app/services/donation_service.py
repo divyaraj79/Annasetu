@@ -8,7 +8,12 @@ from app.models.restaurant import Restaurant
 from app.schemas.donation import DonationCreate, DonationUpdate
 from app.enums.verification_status import VerificationStatus
 from app.enums.status import DonationStatus
-from app.services.match_service import MatchService
+
+# Commenting the below line in the process of adding matching trigger in crud 
+# from app.services.match_service import MatchService
+
+from app.services.lifecycle_service import LifecycleService
+from app.services.matching_service import MatchingService
 
 from app.automation.exceptions import (
     AutomationValidationError,
@@ -18,6 +23,9 @@ from app.automation.exceptions import (
 class DonationService:
     def __init__(self, db: Session):
         self.db = db
+
+        self.matching_service = MatchingService(db)
+        self.lifecycle_service = LifecycleService(db)
 
     def create(self, donation_data: DonationCreate) -> Donation:
         # Check if restaurant exists
@@ -81,9 +89,9 @@ class DonationService:
 
         self.db.flush()
 
-        matches = MatchService(self.db).create_nearby_matches(donation)
-        if matches:
-            donation.status = DonationStatus.MATCHING
+        self.matching_service.create_matches(donation)
+
+        self.lifecycle_service.notify_next_match(donation)
 
         self.db.refresh(donation)
 

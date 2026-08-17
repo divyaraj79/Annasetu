@@ -47,7 +47,7 @@ class NGOService:
 
         ngo = NGO(
             **ngo_data.model_dump(),
-            verification_status=VerificationStatus.PENDING
+            verification_status=VerificationStatus.APPROVED
         )
 
         # TODO:

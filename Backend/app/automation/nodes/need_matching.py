@@ -5,16 +5,8 @@ def need_matching_node(
     state: AutomationState,
 ) -> AutomationState:
     """
-    Trigger matching after a new
-    NGO need is created.
+    Matching is triggered by NeedService.create().
+    This node is retained for graph compatibility.
     """
-
-    automation = (
-        state["services"]["automation"]
-    )
-
-    automation.process_new_need(
-        state["need"],
-    )
 
     return state

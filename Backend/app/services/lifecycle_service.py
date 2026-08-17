@@ -6,7 +6,7 @@ from app.models.match import Match
 from app.enums.status import MatchStatus, DonationStatus
 
 from app.services.match_service import MatchService
-from app.services.donation_service import DonationService
+# from app.services.donation_service import DonationService
 
 from app.automation.email_service import EmailService
 
@@ -22,7 +22,7 @@ class LifecycleService:
         self.db = db
 
         self.match_service = MatchService(db)
-        self.donation_service = DonationService(db)
+        # self.donation_service = DonationService(db)
 
         self.email_service = EmailService()
 
@@ -63,9 +63,7 @@ class LifecycleService:
 
             if donation.status == DonationStatus.MATCHING:
 
-                self.donation_service.mark_as_unmatched(
-                    donation,
-                )
+                donation.status = DonationStatus.UNMATCHED
 
                 self.email_service.send_donation_unmatched(
                     donation.restaurant,
@@ -232,8 +230,16 @@ class LifecycleService:
 
         donation.status = DonationStatus.EXPIRED
 
-        self.donation_service.delete(
-            donation,
-        )
+        # self.donation_service.delete(
+        #     donation,
+        # )
+
+        donation.is_deleted = True
+
+        for item in donation.donation_items:
+            item.is_deleted = True
+
+        for match in donation.matches:
+            match.is_deleted = True
 
         return donation

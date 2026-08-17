@@ -47,7 +47,7 @@ class RestaurantService:
 
         restaurant = Restaurant(
             **restaurant_data.model_dump(),
-            verification_status=VerificationStatus.PENDING
+            verification_status=VerificationStatus.APPROVED
         )
 
         # TODO:
