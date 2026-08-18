@@ -3,10 +3,7 @@ name: AnnaSetu Automation Scheduler
 on:
   schedule:
     # Runs every 10 minutes
-    # - cron: "*/10 * * * *"
-
-    # Runs every 2 minutes temporarily
-    - cron: "*/2 * * * *"
+    - cron: "*/10 * * * *"
 
   workflow_dispatch:
 

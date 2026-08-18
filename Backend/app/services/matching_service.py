@@ -14,6 +14,8 @@ from app.services.ranking_service import RankingService
 
 # from app.automation.email_service import EmailService
 
+MAX_MATCH_DISTANCE_KM = 40
+
 class MatchingService:
 
     def __init__(self, db: Session):
@@ -44,9 +46,24 @@ class MatchingService:
             .all()
         )
 
+        nearby_ngos = []
+
+        for ngo in ngos:
+
+            distance_km = self.match_service._distance_km(
+                donation,
+                ngo,
+            )
+
+            if distance_km is None:
+                continue
+
+            if distance_km <= MAX_MATCH_DISTANCE_KM:
+                nearby_ngos.append(ngo)
+
         ranked_ngos = self.ranking_service.rank_ngos(
             donation,
-            ngos,
+            nearby_ngos,
         )
 
         existing_matches = (
