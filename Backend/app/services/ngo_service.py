@@ -8,10 +8,13 @@ from app.schemas.ngo import NGOCreate, NGOUpdate
 from app.enums.roles import UserRole
 from app.enums.verification_status import VerificationStatus
 
+from app.services.geocoding_service import geocode_address
+from app.automation.email_service import EmailService
 
 class NGOService:
     def __init__(self, db: Session):
         self.db = db
+        self.email_service = EmailService()
 
     def create(self, ngo_data: NGOCreate) -> NGO:
         # Check if user exists
@@ -45,9 +48,23 @@ class NGOService:
         if existing_ngo:
             raise ValueError("NGO profile already exists for this user.")
 
+        ngo_values = ngo_data.model_dump()
+
+        latitude, longitude = geocode_address(
+            ngo_values["address"]
+        )
+
+        ngo_values["latitude"] = latitude
+        ngo_values["longitude"] = longitude
+
+        # ngo = NGO(
+        #     **ngo_data.model_dump(),
+        #     verification_status=VerificationStatus.APPROVED
+        # )
+
         ngo = NGO(
-            **ngo_data.model_dump(),
-            verification_status=VerificationStatus.PENDING
+            **ngo_values,
+            verification_status=VerificationStatus.APPROVED
         )
 
         # TODO:
@@ -58,6 +75,14 @@ class NGOService:
         self.db.flush()
         self.db.refresh(ngo)
 
+        # Send approval email
+        try:
+            self.email_service.send_ngo_registration_approval(
+                ngo
+            )
+        except Exception as exc:
+            print(f"Failed to send approval email: {exc}")
+
         return ngo
 
     def get_by_id(self, ngo_id: UUID) -> NGO | None:
@@ -66,6 +91,24 @@ class NGOService:
             .filter(
                 NGO.id == ngo_id,
                 NGO.is_deleted == False,
+            )
+            .first()
+        )
+
+    def get_by_email(
+        self,
+        email: str,
+    ) -> NGO | None:
+
+        return (
+            self.db.query(NGO)
+            .join(User)
+            .filter(
+                User.email == email,
+                User.is_deleted == False,
+                NGO.is_deleted == False,
+                NGO.verification_status
+                == VerificationStatus.APPROVED,
             )
             .first()
         )
@@ -97,6 +140,13 @@ class NGOService:
             )
 
         update_data = ngo_data.model_dump(exclude_unset=True)
+
+        if "address" in update_data:
+            latitude, longitude = geocode_address(
+                update_data["address"]
+            )
+            update_data["latitude"] = latitude
+            update_data["longitude"] = longitude
 
         for field, value in update_data.items():
             setattr(ngo, field, value)

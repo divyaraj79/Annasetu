@@ -3,6 +3,8 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
+from datetime import datetime, timezone
+
 from app.models.match import Match
 from app.models.donation import Donation
 from app.models.ngo import NGO
@@ -17,7 +19,7 @@ class MatchService:
     def __init__(self, db: Session):
         self.db = db
 
-    def create(self, match_data: MatchCreate) -> Match:
+    def create(self, match_data: MatchCreate, score: float | None = None, attempt_number: int = 1) -> Match:
         # Check Donation exists
         donation = (
             self.db.query(Donation)
@@ -73,7 +75,7 @@ class MatchService:
 
         if existing_match:
             raise ValueError(
-                "A match already exists for this donation and NGO."
+                "A match already exists for this donation andNGO."
             )
 
         distance_km = self._distance_km(donation, ngo)
@@ -83,10 +85,11 @@ class MatchService:
         match = Match(
             donation_id=match_data.donation_id,
             ngo_id=match_data.ngo_id,
-            score=self._match_score(donation, ngo, distance_km),
+            score=score if score is not None else self._match_score(donation, ngo, distance_km),
             distance_km=distance_km,
             status=MatchStatus.PENDING,
-            attempt_number=1,
+            notified_at=None,
+            attempt_number=attempt_number,
             match_reason=f"Nearby food match at {distance_km:.1f} km.",
         )
 
@@ -153,7 +156,7 @@ class MatchService:
         return matches
 
     @staticmethod
-    def _distance_km(donation: Donation, ngo: NGO) -> float | None:
+    def _distance_km(donation: Donation, ngo: NGO) -> float |None:
         coordinates = (
             donation.latitude,
             donation.longitude,
@@ -214,13 +217,13 @@ class MatchService:
 
         if "status" in update_data:
             allowed_statuses = {
-                MatchStatus.PENDING: {MatchStatus.INTERESTED, MatchStatus.REJECTED},
+                MatchStatus.PENDING: {MatchStatus.INTERESTED,MatchStatus.REJECTED},
                 MatchStatus.INTERESTED: {MatchStatus.ACCEPTED, MatchStatus.REJECTED},
                 MatchStatus.ACCEPTED: {MatchStatus.COMPLETED},
             }
             allowed = allowed_statuses.get(match.status, set())
             if update_data["status"] not in allowed:
-                raise ValueError("This match status change is not allowed.")
+                raise ValueError("This match status change isnot allowed.")
 
         # TODO:
         # After authentication,
@@ -252,3 +255,109 @@ class MatchService:
         self.db.flush()
 
         self.db.refresh(match)
+
+    # --------------------------------------------------
+    # Workflow Actions
+    # --------------------------------------------------
+
+    def mark_as_notified(
+        self,
+        match: Match,
+    ) -> Match:
+
+        if match.is_deleted:
+            raise ValueError(
+                "Deleted matches cannot be notified."
+            )
+
+        if match.status != MatchStatus.PENDING:
+            raise ValueError(
+                "Only pending matches can be notified."
+            )
+
+        match.status = MatchStatus.NOTIFIED
+        match.notified_at = datetime.now(timezone.utc)
+
+        self.db.flush()
+        self.db.refresh(match)
+
+        return match
+
+    def mark_as_accepted(
+        self,
+        match: Match,
+    ) -> Match:
+
+        if match.is_deleted:
+            raise ValueError(
+                "Deleted matches cannot be accepted."
+            )
+
+        if match.status != MatchStatus.NOTIFIED:
+            raise ValueError(
+                "Only notified matches can be accepted."
+            )
+
+        match.status = MatchStatus.ACCEPTED
+        match.responded_at = datetime.now(timezone.utc)
+
+        self.db.flush()
+        self.db.refresh(match)
+
+        return match
+
+    def mark_as_declined(
+        self,
+        match: Match,
+        reason: str | None,
+    ) -> Match:
+
+        if match.is_deleted:
+            raise ValueError(
+                "Deleted matches cannot be declined."
+            )
+
+        if match.status != MatchStatus.NOTIFIED:
+            raise ValueError(
+                "Only notified matches can be declined."
+            )
+
+        if reason is None:
+            reason = "No reason provided."
+
+        else:
+            reason = reason.strip()
+            if not reason:
+                reason = "No reason provided."
+
+        match.status = MatchStatus.DECLINED
+        match.responded_at = datetime.now(timezone.utc)
+        match.match_reason = reason
+        match.is_deleted = True
+
+        self.db.flush()
+        self.db.refresh(match)
+
+        return match
+
+    def mark_as_completed(
+        self,
+        match: Match,
+    ) -> Match:
+
+        if match.is_deleted:
+            raise ValueError(
+                "Deleted matches cannot be completed."
+            )
+
+        if match.status != MatchStatus.ACCEPTED:
+            raise ValueError(
+                "Only accepted matches can be completed."
+            )
+
+        match.status = MatchStatus.COMPLETED
+
+        self.db.flush()
+        self.db.refresh(match)
+
+        return match

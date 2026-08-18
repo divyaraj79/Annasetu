@@ -1,0 +1,368 @@
+from pathlib import Path
+
+from google.auth.transport.requests import Request
+from google.oauth2.credentials import Credentials
+
+from google_auth_oauthlib.flow import InstalledAppFlow
+
+from googleapiclient.discovery import build
+
+import base64
+import os
+from email.header import decode_header
+from email.mime.text import MIMEText
+
+from app.config import (
+    CREDENTIALS_PATH,
+    TOKEN_PATH,
+)
+
+
+SCOPES = [
+    "https://www.googleapis.com/auth/gmail.modify",
+    "https://www.googleapis.com/auth/gmail.send",
+]
+
+
+class EmailClient:
+
+    _instance = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+
+        return cls._instance
+
+    def __init__(self):
+        if getattr(self, "_initialized", False):
+            return
+
+        self.credentials_path = CREDENTIALS_PATH
+        self.token_path = TOKEN_PATH
+
+        self.service = None
+
+        self._initialized = True
+
+    def _ensure_credentials_files(self):
+        """
+        Create Gmail credential files from environment
+        variables if they do not already exist.
+        """
+
+        credentials_b64 = os.getenv(
+            "GMAIL_CREDENTIALS_JSON_BASE64"
+        )
+
+        token_b64 = os.getenv(
+            "GMAIL_TOKEN_JSON_BASE64"
+        )
+
+        if (
+            not self.credentials_path.exists()
+            and credentials_b64
+        ):
+            self.credentials_path.write_bytes(
+                base64.b64decode(credentials_b64)
+            )
+
+        if (
+            not self.token_path.exists()
+            and token_b64
+        ):
+            self.token_path.write_bytes(
+                base64.b64decode(token_b64)
+            )
+
+
+    def _get_service(self):
+
+        if self.service is None:
+            self.authenticate()
+
+        return self.service
+    
+
+    def authenticate(self):
+        """
+        Authenticate with Gmail API.
+
+        Creates token.json on first login
+        and refreshes expired tokens
+        automatically.
+        """
+
+        self._ensure_credentials_files()
+
+        credentials = None
+
+        if self.token_path.exists():
+
+            credentials = Credentials.from_authorized_user_file(
+                self.token_path,
+                SCOPES,
+            )
+
+        if (
+            credentials is None
+            or not credentials.valid
+        ):
+
+            if (
+                credentials
+                and credentials.expired
+                and credentials.refresh_token
+            ):
+
+                credentials.refresh(
+                    Request()
+                )
+
+            else:
+
+                raise RuntimeError(
+                    "Missing Gmail credentials. "
+                    "Deploy credentials.json and token.json before starting automation."
+                )
+
+            self.token_path.write_text(
+                credentials.to_json(),
+                encoding="utf-8",
+            )
+
+        self.service = build(
+            "gmail",
+            "v1",
+            credentials=credentials,
+        )
+
+        return self.service
+
+
+    def fetch_unread_messages(
+        self,
+        max_results: int = 10,
+    ) -> list[dict]:
+        """
+        Fetch unread messages from Gmail.
+
+        Returns a list containing
+        Gmail message metadata.
+        """
+
+        service = self._get_service()
+
+        response = (
+            service.users()
+            .messages()
+            .list(
+                userId="me",
+                q="in:inbox is:unread",
+                maxResults=max_results,
+            )
+            .execute()
+        )
+
+        messages = []
+
+        for message in response.get(
+            "messages",
+            [],
+        ):
+
+            messages.append(
+                self.get_message(
+                    message["id"]
+                )
+            )
+
+        return messages
+    
+    def _extract_body(
+        self,
+        payload: dict,
+    ) -> str:
+        """
+        Recursively extract the first
+        plain-text body from a Gmail message.
+        """
+
+        mime_type = payload.get(
+            "mimeType",
+            ""
+        )
+
+        if mime_type == "text/plain":
+
+            data = (
+                payload.get(
+                    "body",
+                    {}
+                ).get("data")
+            )
+
+            if data:
+
+                return base64.urlsafe_b64decode(
+                    data
+                ).decode(
+                    "utf-8",
+                    errors="replace",
+                )
+
+            return ""
+
+        for part in payload.get(
+            "parts",
+            [],
+        ):
+
+            body = self._extract_body(
+                part,
+            )
+
+            if body:
+
+                return body
+
+        return ""
+
+
+    def get_message(
+        self,
+        message_id: str,
+    ) -> dict:
+        """
+        Fetch a complete Gmail message.
+
+        Returns:
+            id
+            thread_id
+            subject
+            sender
+            recipient
+            date
+            body
+        """
+
+        service = self._get_service()
+
+        message = (
+            service.users()
+            .messages()
+            .get(
+                userId="me",
+                id=message_id,
+                format="full",
+            )
+            .execute()
+        )
+
+        headers = message["payload"].get(
+            "headers",
+            []
+        )
+
+        subject = ""
+        sender = ""
+        recipient = ""
+        date = ""
+
+        for header in headers:
+
+            name = header["name"].lower()
+
+            if name == "subject":
+                decoded = decode_header(
+                    header["value"]
+                )
+
+                subject = "".join(
+                    part.decode(encoding or "utf-8")
+                    if isinstance(part, bytes)
+                    else part
+                    for part, encoding in decoded
+                )
+
+            elif name == "from":
+                sender = header["value"]
+
+            elif name == "to":
+                recipient = header["value"]
+
+            elif name == "date":
+                date = header["value"]
+
+        body = self._extract_body(
+            message["payload"]
+        )
+
+        return {
+            "id": message["id"],
+            "thread_id": message["threadId"],
+            "subject": subject,
+            "from": sender,
+            "to": recipient,
+            "date": date,
+            "body": body,
+        }
+    
+
+    def mark_as_read(
+        self,
+        message_id: str,
+    ) -> None:
+        """
+        Mark a Gmail message as read.
+        """
+
+        service = self._get_service()
+
+        (
+            service.users()
+            .messages()
+            .modify(
+                userId="me",
+                id=message_id,
+                body={
+                    "removeLabelIds": [
+                        "UNREAD",
+                    ],
+                },
+            )
+            .execute()
+        )
+
+    def send_email(
+        self,
+        recipient: str,
+        subject: str,
+        body: str,
+    ) -> dict:
+        """
+        Send an email using Gmail.
+        """
+
+        service = self._get_service()
+
+        message = MIMEText(body)
+
+        message["to"] = recipient
+        message["subject"] = subject
+
+        encoded_message = base64.urlsafe_b64encode(
+            message.as_bytes()
+        ).decode()
+
+        return (
+            service.users()
+            .messages()
+            .send(
+                userId="me",
+                body={
+                    "raw": encoded_message,
+                },
+            )
+            .execute()
+        )

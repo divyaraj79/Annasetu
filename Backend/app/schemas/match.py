@@ -25,6 +25,7 @@ class MatchResponse(BaseModel):
     status: MatchStatus
     attempt_number: int
     matched_at: datetime | None = None
+    notified_at: datetime | None = None
     responded_at: datetime | None = None
     match_reason: str | None = None
 

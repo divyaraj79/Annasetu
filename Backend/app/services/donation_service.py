@@ -8,12 +8,26 @@ from app.models.restaurant import Restaurant
 from app.schemas.donation import DonationCreate, DonationUpdate
 from app.enums.verification_status import VerificationStatus
 from app.enums.status import DonationStatus
-from app.services.match_service import MatchService
+
+# Commenting the below line in the process of adding matching trigger in crud 
+# from app.services.match_service import MatchService
+
+from app.services.lifecycle_service import LifecycleService
+from app.services.matching_service import MatchingService
+
+from app.automation.exceptions import (
+    AutomationValidationError,
+)
+
+from app.services.geocoding_service import geocode_address
 
 
 class DonationService:
     def __init__(self, db: Session):
         self.db = db
+
+        self.matching_service = MatchingService(db)
+        self.lifecycle_service = LifecycleService(db)
 
     def create(self, donation_data: DonationCreate) -> Donation:
         # Check if restaurant exists
@@ -24,56 +38,72 @@ class DonationService:
         )
 
         if not restaurant:
-            raise ValueError("Restaurant not found.")
+            raise AutomationValidationError(
+                "Restaurant not found."
+            )
 
         # Restaurant must not be deleted
         if restaurant.is_deleted:
-            raise ValueError("Restaurant is deleted.")
+            raise AutomationValidationError(
+                "Restaurant account is no longer active."
+            )
 
         # Restaurant must be approved
         if restaurant.verification_status != VerificationStatus.APPROVED:
-            raise ValueError("Restaurant is not approved.")
+            raise AutomationValidationError(
+                "Your restaurant has not been approved yet."
+            )
 
         # Quantity validation
         if donation_data.quantity <= 0:
-            raise ValueError("Quantity must be greater than zero.")
+            raise AutomationValidationError(
+                "Donation must contain at least one item."
+            )
         
         # Expiry validation
         if donation_data.expiry_time <= datetime.now(timezone.utc):
-            raise ValueError(
-                "Expiry time must be in the future."
+            raise AutomationValidationError(
+                "Expiry Time must be in the future."
             )
 
         if donation_data.cooked_at:
 
             if donation_data.expiry_time <= donation_data.cooked_at:
-                raise ValueError("Expiry time must be after cooked time.")
-
-            if donation_data.expiry_time > donation_data.cooked_at + timedelta(hours=10):
-                raise ValueError(
-                    "Food expiry cannot exceed 10 hours after cooking."
+                raise AutomationValidationError(
+                    "Expiry Time must be after Cooked Time."
                 )
 
-        donation = Donation(
-            **donation_data.model_dump(),
-            status=DonationStatus.CREATED,
+            if donation_data.expiry_time > donation_data.cooked_at + timedelta(hours=20):
+                raise AutomationValidationError(
+                    "Food expiry cannot exceed 20 hours after cooking."
+                )
+
+        # donation = Donation(
+        #     **donation_data.model_dump(),
+        #     status=DonationStatus.CREATED,
+        # )
+
+        donation_values = donation_data.model_dump()
+
+        latitude, longitude = geocode_address(
+            donation_values["pickup_address"]
         )
 
-        # TODO:
-        # Geocode pickup_address and automatically
-        # populate latitude and longitude.
+        donation_values["latitude"] = latitude
+        donation_values["longitude"] = longitude
 
-        # TODO:
-        # Trigger LangGraph workflow after
-        # successful donation creation.
+        donation = Donation(
+            **donation_values,
+            status=DonationStatus.CREATED,
+        )
 
         self.db.add(donation)
 
         self.db.flush()
 
-        matches = MatchService(self.db).create_nearby_matches(donation)
-        if matches:
-            donation.status = DonationStatus.MATCHING
+        self.matching_service.create_matches(donation)
+
+        self.lifecycle_service.notify_next_match(donation)
 
         self.db.refresh(donation)
 
@@ -145,27 +175,47 @@ class DonationService:
                     "Expiry time must be after cooked time."
                 )
 
-            if expiry_time - cooked_at > timedelta(hours=10):
+            if expiry_time - cooked_at > timedelta(hours=20):
                 raise ValueError(
-                    "Maximum food life cannot exceed 10 hours."
+                    "Maximum food life cannot exceed 20 hours."
                 )
             
         
 
-        # TODO:
-        # After authentication is implemented,
-        # ensure only the donation owner
-        # (or an admin) can update this donation.
-        #
-        # If pickup_address changes,
-        # automatically geocode the address
-        # and update latitude & longitude.
+        if "pickup_address" in update_data:
+            latitude, longitude = geocode_address(
+                update_data["pickup_address"]
+            )
+            update_data["latitude"] = latitude
+            update_data["longitude"] = longitude
 
         for field, value in update_data.items():
             setattr(donation, field, value)
 
         self.db.flush()
 
+        self.db.refresh(donation)
+
+        return donation
+
+    def mark_as_unmatched(
+        self,
+        donation: Donation,
+    ) -> Donation:
+
+        if donation.is_deleted:
+            raise ValueError(
+                "Deleted donations cannot be marked as unmatched."
+            )
+
+        if donation.status != DonationStatus.MATCHING:
+            raise ValueError(
+                "Only matching donations can become unmatched."
+            )
+
+        donation.status = DonationStatus.UNMATCHED
+
+        self.db.flush()
         self.db.refresh(donation)
 
         return donation

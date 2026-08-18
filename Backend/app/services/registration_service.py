@@ -16,10 +16,13 @@ from app.models.ngo import NGO
 
 from uuid import UUID
 
+from app.automation.email_service import EmailService
+
 
 class RegistrationService:
     def __init__(self, db: Session):
         self.db = db
+        self.email_service = EmailService()
 
     def register(self, registration_data: RegistrationRequest):
         user_service = UserService(self.db)
@@ -44,8 +47,8 @@ class RegistrationService:
                     email=registration_data.email,
                     phone=registration_data.phone,
                     role=registration_data.role,
-                ),
-                password_hash=hashed_password,
+                    password_hash=hashed_password,
+),
             )
 
             if registration_data.role == UserRole.RESTAURANT:
@@ -110,11 +113,18 @@ class RegistrationService:
             self.db.commit()
             self.db.refresh(restaurant)
 
-            return restaurant
-
         except Exception:
             self.db.rollback()
             raise
+
+        try:
+            self.email_service.send_restaurant_registration_approval(
+                restaurant,
+            )
+        except Exception as exc:
+            print(f"Failed to send approval email: {exc}")
+
+        return restaurant
     
     def approve_ngo_registration(
         self,
@@ -132,15 +142,22 @@ class RegistrationService:
 
         try:
             ngo.verification_status = VerificationStatus.APPROVED
-
+            
             self.db.commit()
             self.db.refresh(ngo)
-
-            return ngo
 
         except Exception:
             self.db.rollback()
             raise
+
+        try:
+            self.email_service.send_ngo_registration_approval(
+                ngo,
+            )
+        except Exception as exc:
+            print(f"Failed to send approval email: {exc}")
+
+        return ngo
     
     def _delete_registration(self, organization, user):
         try:

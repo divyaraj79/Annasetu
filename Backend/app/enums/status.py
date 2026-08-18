@@ -1,6 +1,4 @@
 from enum import Enum
-
-
 class DonationStatus(str, Enum):
     UNMATCHED = "unmatched"
     CREATED = "created"
@@ -11,12 +9,11 @@ class DonationStatus(str, Enum):
     COMPLETED = "completed"
     CANCELLED = "cancelled"
     EXPIRED = "expired"
-
-
 class MatchStatus(str, Enum):
     PENDING = "pending"
-    INTERESTED = "interested"
+    NOTIFIED = "notified"
     ACCEPTED = "accepted"
+    DECLINED = "declined"
     REJECTED = "rejected"
     COMPLETED = "completed"
     # TIMEOUT = "timeout"

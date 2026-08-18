@@ -1,0 +1,180 @@
+from app.automation.email_client import EmailClient
+from app.automation.email_templates import (
+    DONATION_EMAIL,
+    NGO_NOTIFICATION,
+    RESTAURANT_REGISTRATION_APPROVED,
+    DONATION_ACCEPTED,
+    DONATION_UNMATCHED,
+    DONATION_COMPLETED,
+    MATCH_TIMEOUT,
+    NGO_REGISTRATION_APPROVED,
+    DONATION_VALIDATION_FAILED,
+    NEED_VALIDATION_FAILED,
+    need_validation_failed_template,
+    donation_validation_failed_template,
+    ngo_registration_approved_template,
+    registration_approved_template,
+    ngo_notification_template,
+    donation_accepted_template,
+    donation_unmatched_template,
+    donation_completed_template,
+    match_timeout_template,
+)
+
+from app.models.donation import Donation
+from app.models.match import Match
+from app.models.ngo import NGO
+from app.models.restaurant import Restaurant
+
+
+class EmailService:
+
+    def __init__(self):
+
+        self.email_client = EmailClient()
+
+    # --------------------------------------------------
+    # Incoming Emails
+    # --------------------------------------------------
+
+    def fetch_unread_emails(
+            self,
+        ) -> list[dict]:
+            """
+            Fetch every unread email.
+    
+            LangGraph will determine
+            what type of email it is.
+            """
+    
+            return (
+                self.email_client.fetch_unread_messages()
+            )
+
+    # --------------------------------------------------
+    # Outgoing Emails
+    # --------------------------------------------------
+
+    def send_restaurant_registration_approval(
+        self,
+        restaurant: Restaurant,
+    ) -> dict:
+
+        return self.email_client.send_email(
+            recipient=restaurant.user.email,
+            subject=RESTAURANT_REGISTRATION_APPROVED,
+            body=registration_approved_template(),
+        )
+    
+    def send_ngo_registration_approval(
+        self,
+        ngo: NGO,
+    ) -> dict:
+
+        return self.email_client.send_email(
+            recipient=ngo.user.email,
+            subject=NGO_REGISTRATION_APPROVED,
+            body=ngo_registration_approved_template(),
+        )
+
+    def send_match_notification(
+        self,
+        donation: Donation,
+        match: Match,
+    ) -> dict:
+
+        return self.email_client.send_email(
+            recipient=match.ngo.user.email,
+            subject=NGO_NOTIFICATION,
+            body=ngo_notification_template(
+                donation,
+                match,
+            ),
+        )
+
+    def send_donation_accepted(
+        self,
+        restaurant: Restaurant,
+        ngo: NGO,
+    ) -> dict:
+
+        return self.email_client.send_email(
+            recipient=restaurant.user.email,
+            subject=DONATION_ACCEPTED,
+            body=donation_accepted_template(
+                ngo,
+            ),
+        )
+
+    def send_donation_unmatched(
+        self,
+        restaurant: Restaurant,
+    ) -> dict:
+
+        return self.email_client.send_email(
+            recipient=restaurant.user.email,
+            subject=DONATION_UNMATCHED,
+            body=donation_unmatched_template(),
+        )
+
+    def send_donation_completed(
+        self,
+        restaurant: Restaurant,
+        ngo: NGO,
+    ) -> dict:
+
+        return self.email_client.send_email(
+            recipient=restaurant.user.email,
+            subject=DONATION_COMPLETED,
+            body=donation_completed_template(
+                ngo,
+            ),
+        )
+
+    def send_match_timeout(
+        self,
+        ngo: NGO,
+    ) -> dict:
+
+        return self.email_client.send_email(
+            recipient=ngo.user.email,
+            subject=MATCH_TIMEOUT,
+            body=match_timeout_template(),
+        )
+
+    def send_donation_validation_failed(
+        self,
+        recipient: str,
+        reason: str,
+    ) -> dict:
+
+        return self.email_client.send_email(
+            recipient=recipient,
+            subject=DONATION_VALIDATION_FAILED,
+            body=donation_validation_failed_template(
+                reason,
+            ),
+        )
+
+    def send_need_validation_failed(
+        self,
+        recipient: str,
+        reason: str,
+    ) -> dict:
+
+        return self.email_client.send_email(
+            recipient=recipient,
+            subject=NEED_VALIDATION_FAILED,
+            body=need_validation_failed_template(
+                reason,
+            ),
+        )
+    
+    def mark_email_as_read(
+        self,
+        message_id: str,
+    ) -> None:
+
+        self.email_client.mark_as_read(
+            message_id
+        )

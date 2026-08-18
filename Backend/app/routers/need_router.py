@@ -69,7 +69,7 @@ def create_need(
 
 
 @router.get("/{need_id}", response_model=NeedResponse)
-def get_need(need_id: UUID, db: Session = Depends(get_db)):
+def get_need(need_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     service = NeedService(db)
     need = service.get_by_id(need_id)
     if not need:
@@ -78,7 +78,7 @@ def get_need(need_id: UUID, db: Session = Depends(get_db)):
 
 
 @router.get("/", response_model=list[NeedResponse])
-def get_needs(db: Session = Depends(get_db)):
+def get_needs(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     service = NeedService(db)
     return service.get_all()
 
