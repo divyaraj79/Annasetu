@@ -65,8 +65,19 @@ class LifecycleService:
 
                 donation.status = DonationStatus.UNMATCHED
 
-                self.email_service.send_donation_unmatched(
+                print(
+                    f"UNMATCHED EMAIL → "
+                    f"restaurant={donation.restaurant.restaurant_name}, "
+                    f"recipient={donation.restaurant.user.email}"
+                )
+
+                response = self.email_service.send_donation_unmatched(
                     donation.restaurant,
+                )
+
+                print(
+                    f"UNMATCHED EMAIL GMAIL RESPONSE → "
+                    f"{response.get('id')}"
                 )
 
             return None
