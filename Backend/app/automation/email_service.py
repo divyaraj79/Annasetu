@@ -5,6 +5,7 @@ from app.automation.email_templates import (
     RESTAURANT_REGISTRATION_APPROVED,
     DONATION_ACCEPTED,
     DONATION_UNMATCHED,
+    DONATION_COMPLETED,
     MATCH_TIMEOUT,
     NGO_REGISTRATION_APPROVED,
     DONATION_VALIDATION_FAILED,
@@ -16,6 +17,7 @@ from app.automation.email_templates import (
     ngo_notification_template,
     donation_accepted_template,
     donation_unmatched_template,
+    donation_completed_template,
     match_timeout_template,
 )
 
@@ -113,6 +115,20 @@ class EmailService:
             recipient=restaurant.user.email,
             subject=DONATION_UNMATCHED,
             body=donation_unmatched_template(),
+        )
+
+    def send_donation_completed(
+        self,
+        restaurant: Restaurant,
+        ngo: NGO,
+    ) -> dict:
+
+        return self.email_client.send_email(
+            recipient=restaurant.user.email,
+            subject=DONATION_COMPLETED,
+            body=donation_completed_template(
+                ngo,
+            ),
         )
 
     def send_match_timeout(

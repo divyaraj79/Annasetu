@@ -152,6 +152,11 @@ class LifecycleService:
                 DonationStatus.COMPLETED
             )
 
+            self.email_service.send_donation_completed(
+                donation.restaurant,
+                match.ngo,
+            )
+
         remaining_matches = (
             self.db.query(Match)
             .filter(

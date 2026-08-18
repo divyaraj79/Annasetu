@@ -19,6 +19,8 @@ DONATION_EMAIL = "Food Donation"
 
 DONATION_UNMATCHED = "Donation Unmatched"
 
+DONATION_COMPLETED = "Donation Completed"
+
 NGO_NOTIFICATION = "Food Donation Opportunity"
 
 RESTAURANT_REGISTRATION_APPROVED = "Restaurant Registration Approved"
@@ -372,6 +374,27 @@ def need_validation_failed_template(
         previous email.
 
         Thank you for supporting AnnaSetu.
+
+        Team AnnaSetu
+        """
+
+def donation_completed_template(
+    ngo: NGO,
+) -> str:
+
+    return f"""
+        Hello,
+
+        Your food donation has been successfully
+        received by the NGO.
+
+        NGO:
+        {ngo.ngo_name}
+
+        The donation has now been marked as completed.
+
+        Thank you for helping reduce food waste
+        through AnnaSetu.
 
         Team AnnaSetu
         """
