@@ -74,6 +74,7 @@ class MatchingService:
 
             if existing_matches == 0:
                 donation.status = DonationStatus.UNMATCHED
+                self.db.flush()
 
             return []
         
@@ -121,5 +122,6 @@ class MatchingService:
 
         if donation.status == DonationStatus.CREATED:
             donation.status = DonationStatus.MATCHING
+            self.db.flush()
 
         return matches
