@@ -1,7 +1,18 @@
+# Environment / secrets
+Backend/credentials.json
+Backend/token.json
+Backend/token_old.json
+
+# Environment files
+.env
+.env.*
+
+# Backend
 backend/.venv/
 backend/__pycache__/
-backend/.env
+
+# Frontend
 frontend/node_modules/
-.env
-Backend/token_old.json
-close
+
+# VS Code
+.vscode/
