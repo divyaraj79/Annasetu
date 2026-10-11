@@ -1,0 +1,58 @@
+[33mcommit d2d7c0d233d2e4c31dd0c4972183304002618b3f[m[33m ([m[1;31morigin/speed-up[m[33m)[m
+Merge: 2d6542f 34b364b
+Author: monasethiya9 <monasethiya9@gmail.com>
+Date:   Sun Aug 16 21:50:47 2026 +0530
+
+    Merge main into speed-up
+
+ Backend/app/auth/login_service.py             |    2 [32m+[m[31m-[m
+ Backend/app/core/exception_handler.py         |   12 [32m+[m[31m-[m
+ Backend/app/enums/status.py                   |   10 [32m+[m[31m-[m
+ Backend/app/routers/auth_router.py            |    9 [32m+[m[31m-[m
+ Backend/app/schemas/auth.py                   |    4 [32m+[m[31m-[m
+ Backend/app/schemas/donation.py               |    4 [32m+[m
+ Backend/app/schemas/ngo.py                    |    4 [32m+[m
+ Backend/app/schemas/restaurant.py             |    4 [32m+[m
+ Backend/app/services/donation_service.py      |    5 [32m+[m
+ Backend/app/services/match_service.py         |  119 [32m+[m[31m-[m
+ Backend/app/services/registration_service.py  |   10 [32m+[m[31m-[m
+ Backend/app/services/user_service.py          |   11 [32m+[m[31m-[m
+ Backend/main.py                               |   14 [32m+[m[31m-[m
+ Backend/requirements.txt                      |    6 [32m+[m[31m-[m
+ Frontend/.gitignore                           |   28 [32m+[m
+ Frontend/README.md                            |    8 [32m+[m
+ Frontend/eslint.config.js                     |   39 [32m+[m
+ Frontend/index.html                           |   13 [32m+[m
+ Frontend/package-lock.json                    | 5510 [32m+++++++++++++++++++++++++[m
+ Frontend/package.json                         |   36 [32m+[m
+ Frontend/postcss.config.js                    |    6 [32m+[m
+ Frontend/public/vite.svg                      |    1 [32m+[m
+ Frontend/src/App.css                          |   42 [32m+[m
+ Frontend/src/App.jsx                          |   37 [32m+[m
+ Frontend/src/assets/react.svg                 |    1 [32m+[m
+ Frontend/src/components/ProtectedRoute.jsx    |   15 [32m+[m
+ Frontend/src/components/common/Footer.jsx     |   83 [32m+[m
+ Frontend/src/components/common/Navbar.jsx     |   41 [32m+[m
+ Frontend/src/components/home/CTA.jsx          |   27 [32m+[m
+ Frontend/src/components/home/Campaigns.jsx    |   95 [32m+[m
+ Frontend/src/components/home/Features.jsx     |   80 [32m+[m
+ Frontend/src/components/home/Hero.jsx         |  101 [32m+[m
+ Frontend/src/components/home/HowItWorks.jsx   |   75 [32m+[m
+ Frontend/src/components/home/Stats.jsx        |   59 [32m+[m
+ Frontend/src/components/home/Testimonials.jsx |   68 [32m+[m
+ Frontend/src/index.css                        |   37 [32m+[m
+ Frontend/src/layouts/MainLayout.jsx           |   16 [32m+[m
+ Frontend/src/main.jsx                         |   13 [32m+[m
+ Frontend/src/pages/About.jsx                  |  136 [32m+[m
+ Frontend/src/pages/Contact.jsx                |   95 [32m+[m
+ Frontend/src/pages/Dashboard.jsx              |  180 [32m+[m
+ Frontend/src/pages/Donate.jsx                 |   25 [32m+[m
+ Frontend/src/pages/Home.jsx                   |   21 [32m+[m
+ Frontend/src/pages/Login.jsx                  |  146 [32m+[m
+ Frontend/src/pages/NotFound.jsx               |   61 [32m+[m
+ Frontend/src/pages/Register.jsx               |  281 [32m++[m
+ Frontend/src/services/api.js                  |   25 [32m+[m
+ Frontend/{index.js => src/styles/global.css}  |    0
+ Frontend/tailwind.config.js                   |   22 [32m+[m
+ Frontend/vite.config.js                       |    7 [32m+[m
+ 50 files changed, 7606 insertions(+), 38 deletions(-)
