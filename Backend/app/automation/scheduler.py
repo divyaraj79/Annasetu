@@ -18,9 +18,11 @@ from app.automation.exceptions import (
     AutomationValidationError,
 )
 
-from app.automation.email_templates import DONATION_EMAIL
+from app.automation.email_templates import (
+    DONATION_EMAIL,
+    NEED_EMAIL,
+)
 from email.utils import parseaddr
-
 
 MATCH_RESPONSE_TIMEOUT = timedelta(minutes=30)
 
@@ -46,17 +48,16 @@ class Scheduler:
         try:
 
             self._check_match_timeouts()
+            self.db.commit()
 
             self._check_donation_expiry()
+            self.db.commit()
 
             self._process_unread_emails()
-
-            self.db.commit()
 
         except Exception:
 
             self.db.rollback()
-
             raise
 
     def _check_match_timeouts(self) -> None:
@@ -141,7 +142,10 @@ class Scheduler:
                     email,
                 )
 
+                self.db.commit()
+
             except AutomationValidationError as exc:
+                self.db.rollback()
                 print(
                     f"Validation failed: {exc.message}"
                 )
@@ -155,10 +159,8 @@ class Scheduler:
                     .lower()
                 )
 
-                if (
-                    subject
-                    == DONATION_EMAIL.lower()
-                ):
+                if subject == DONATION_EMAIL.lower():
+
                     try:
                         recipient = parseaddr(email["from"])[1]
 
@@ -172,11 +174,30 @@ class Scheduler:
                             f"Failed to send correction email: {send_exc}"
                         )
 
+                elif subject == NEED_EMAIL.lower():
+
+                    try:
+                        recipient = parseaddr(email["from"])[1]
+
+                        self.email_service.send_need_validation_failed(
+                            recipient=recipient,
+                            reason=exc.message,
+                        )
+
+                    except Exception as send_exc:
+                        print(
+                            f"Failed to send correction email: {send_exc}"
+                        )
+
                 self.email_service.mark_email_as_read(
                     email["id"],
                 )
 
+                self.db.commit()
+
             except Exception as exc:
+                self.db.rollback()
+
                 print(
                     f"Email processing failed: {exc}"
                 )

@@ -8,16 +8,26 @@ from app.models.restaurant import Restaurant
 from app.schemas.donation import DonationCreate, DonationUpdate
 from app.enums.verification_status import VerificationStatus
 from app.enums.status import DonationStatus
-from app.services.match_service import MatchService
+
+# Commenting the below line in the process of adding matching trigger in crud 
+# from app.services.match_service import MatchService
+
+from app.services.lifecycle_service import LifecycleService
+from app.services.matching_service import MatchingService
 
 from app.automation.exceptions import (
     AutomationValidationError,
 )
 
+from app.services.geocoding_service import geocode_address
+
 
 class DonationService:
     def __init__(self, db: Session):
         self.db = db
+
+        self.matching_service = MatchingService(db)
+        self.lifecycle_service = LifecycleService(db)
 
     def create(self, donation_data: DonationCreate) -> Donation:
         # Check if restaurant exists
@@ -68,22 +78,32 @@ class DonationService:
                     "Food expiry cannot exceed 20 hours after cooking."
                 )
 
-        donation = Donation(
-            **donation_data.model_dump(),
-            status=DonationStatus.CREATED,
+        # donation = Donation(
+        #     **donation_data.model_dump(),
+        #     status=DonationStatus.CREATED,
+        # )
+
+        donation_values = donation_data.model_dump()
+
+        latitude, longitude = geocode_address(
+            donation_values["pickup_address"]
         )
 
-        # TODO:
-        # Geocode pickup_address and automatically
-        # populate latitude and longitude.
+        donation_values["latitude"] = latitude
+        donation_values["longitude"] = longitude
+
+        donation = Donation(
+            **donation_values,
+            status=DonationStatus.CREATED,
+        )
 
         self.db.add(donation)
 
         self.db.flush()
 
-        matches = MatchService(self.db).create_nearby_matches(donation)
-        if matches:
-            donation.status = DonationStatus.MATCHING
+        self.matching_service.create_matches(donation)
+
+        self.lifecycle_service.notify_next_match(donation)
 
         self.db.refresh(donation)
 
@@ -162,14 +182,12 @@ class DonationService:
             
         
 
-        # TODO:
-        # After authentication is implemented,
-        # ensure only the donation owner
-        # (or an admin) can update this donation.
-        #
-        # If pickup_address changes,
-        # automatically geocode the address
-        # and update latitude & longitude.
+        if "pickup_address" in update_data:
+            latitude, longitude = geocode_address(
+                update_data["pickup_address"]
+            )
+            update_data["latitude"] = latitude
+            update_data["longitude"] = longitude
 
         for field, value in update_data.items():
             setattr(donation, field, value)

@@ -19,6 +19,8 @@ DONATION_EMAIL = "Food Donation"
 
 DONATION_UNMATCHED = "Donation Unmatched"
 
+DONATION_COMPLETED = "Donation Completed"
+
 NGO_NOTIFICATION = "Food Donation Opportunity"
 
 RESTAURANT_REGISTRATION_APPROVED = "Restaurant Registration Approved"
@@ -31,6 +33,10 @@ MATCH_TIMEOUT = "Donation Response Timeout"
 
 DONATION_VALIDATION_FAILED = (
     "Donation Could Not Be Processed"
+)
+
+NEED_VALIDATION_FAILED = (
+    "Food Need Could Not Be Processed"
 )
 
 NEED_EMAIL = "Food Need"
@@ -340,6 +346,55 @@ def donation_validation_failed_template(
         previous email.
 
         Thank you for supporting AnnaSetu.
+
+        Team AnnaSetu
+        """
+
+
+def need_validation_failed_template(
+    reason: str,
+) -> str:
+
+    return f"""
+        Hello,
+
+        We received your Food Need email
+        but could not process it.
+
+        Reason:
+
+        {reason}
+
+        Please correct the above issue and
+        send a NEW email with the subject:
+
+        Food Need
+
+        You do not need to reply to the
+        previous email.
+
+        Thank you for supporting AnnaSetu.
+
+        Team AnnaSetu
+        """
+
+def donation_completed_template(
+    ngo: NGO,
+) -> str:
+
+    return f"""
+        Hello,
+
+        Your food donation has been successfully
+        received by the NGO.
+
+        NGO:
+        {ngo.ngo_name}
+
+        The donation has now been marked as completed.
+
+        Thank you for helping reduce food waste
+        through AnnaSetu.
 
         Team AnnaSetu
         """

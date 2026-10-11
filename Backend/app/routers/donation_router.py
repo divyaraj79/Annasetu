@@ -66,7 +66,7 @@ def create_donation(
 
 
 @router.get("/{donation_id}", response_model=DonationResponse)
-def get_donation(donation_id: UUID, db: Session = Depends(get_db)):
+def get_donation(donation_id: UUID, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     service = DonationService(db)
     donation = service.get_by_id(donation_id)
     if not donation:
@@ -75,7 +75,7 @@ def get_donation(donation_id: UUID, db: Session = Depends(get_db)):
 
 
 @router.get("/", response_model=list[DonationResponse])
-def get_donations(db: Session = Depends(get_db)):
+def get_donations(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     service = DonationService(db)
     return service.get_all()
 

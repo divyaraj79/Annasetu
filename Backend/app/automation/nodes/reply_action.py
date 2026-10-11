@@ -17,6 +17,40 @@ def reply_action_node(
 
     reply = state["reply_data"]
 
+    required_fields = (
+        "intent",
+        "reference_id",
+    )
+
+    for field in required_fields:
+
+        if field not in reply:
+
+            raise AutomationValidationError(
+                f'Missing "{field}" in NGO reply.'
+            )
+
+    allowed_intents = {
+        "accept",
+        "decline",
+        "completed",
+    }
+
+    if reply["intent"] not in allowed_intents:
+
+        raise AutomationValidationError(
+            f'Unsupported NGO intent: {reply["intent"]}'
+        )
+
+    if (
+        reply["intent"] == "decline"
+        and not reply.get("reason")
+    ):
+
+        raise AutomationValidationError(
+            "Decline reason is missing."
+        )
+
     if reply["intent"] == "accept":
 
         automation.accept_match(

@@ -5,7 +5,7 @@ from app.models.match import Match
 from app.schemas.donation import DonationCreate
 
 from app.services.donation_service import DonationService
-from app.services.matching_service import MatchingService
+# from app.services.matching_service import MatchingService
 from app.services.lifecycle_service import LifecycleService
 
 from app.schemas.donation_item import DonationItemCreate
@@ -19,12 +19,12 @@ from app.automation.exceptions import (
 
 from app.schemas.need import NeedCreate
 from app.services.need_service import NeedService
-from app.enums.urgency import Urgency
+# from app.enums.urgency import Urgency
 from app.models.ngo import NGO
-from app.models.donation import Donation
+# from app.models.donation import Donation
 
-from app.models.need import Need
-from app.enums.status import DonationStatus
+# from app.models.need import Need
+# from app.enums.status import DonationStatus
 
 
 class AutomationService:
@@ -35,7 +35,7 @@ class AutomationService:
         self.donation_service = DonationService(db)
         self.need_service = NeedService(db)
         self.donation_item_service = DonationItemService(db)
-        self.matching_service = MatchingService(db)
+        # self.matching_service = MatchingService(db)
         self.lifecycle_service = LifecycleService(db)
 
     def create_donation(
@@ -46,7 +46,7 @@ class AutomationService:
     ):
         """
         Create a donation together with all
-        donation items, then trigger matching.
+        donation items.
         """
 
         """
@@ -111,13 +111,13 @@ class AutomationService:
                 )
             )
 
-        self.matching_service.create_matches(
-            donation,
-        )
+        # self.matching_service.create_matches(
+        #     donation,
+        # )
 
-        self.lifecycle_service.notify_next_match(
-            donation,
-        )
+        # self.lifecycle_service.notify_next_match(
+        #     donation,
+        # )
 
         return donation
 
@@ -165,38 +165,38 @@ class AutomationService:
 
         return need
 
-    def process_new_need(
-        self,
-        need: Need,
-    ):
-        """
-        Re-run matching for all active donations
-        after a new NGO need is created.
-        """
+    # def process_new_need(
+    #     self,
+    #     need: Need,
+    # ):
+    #     """
+    #     Re-run matching for all active donations
+    #     after a new NGO need is created.
+    #     """
 
-        donations = (
-            self.db.query(Donation)
-            .filter(
-                Donation.is_deleted == False,
-                Donation.status.in_(
-                    [
-                        DonationStatus.MATCHING,
-                        DonationStatus.UNMATCHED,
-                    ]
-                )
-            )
-            .all()
-        )
+    #     donations = (
+    #         self.db.query(Donation)
+    #         .filter(
+    #             Donation.is_deleted == False,
+    #             Donation.status.in_(
+    #                 [
+    #                     DonationStatus.MATCHING,
+    #                     DonationStatus.UNMATCHED,
+    #                 ]
+    #             )
+    #         )
+    #         .all()
+    #     )
 
-        for donation in donations:
+    #     for donation in donations:
 
-            self.matching_service.create_matches(
-                donation,
-            )
+    #         self.matching_service.create_matches(
+    #             donation,
+    #         )
 
-            self.lifecycle_service.notify_next_match(
-                donation,
-            )
+    #         self.lifecycle_service.notify_next_match(
+    #             donation,
+    #         )
 
     def accept_match(
         self,

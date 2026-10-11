@@ -51,7 +51,11 @@ def create_match(
 
 
 @router.get("/{match_id}", response_model=MatchResponse)
-def get_match(match_id: UUID, db: Session = Depends(get_db)):
+def get_match(
+    match_id: UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     service = MatchService(db)
     match = service.get_by_id(match_id)
     if not match:
@@ -60,7 +64,10 @@ def get_match(match_id: UUID, db: Session = Depends(get_db)):
 
 
 @router.get("/", response_model=list[MatchResponse])
-def get_matches(db: Session = Depends(get_db)):
+def get_matches(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     service = MatchService(db)
     return service.get_all()
 

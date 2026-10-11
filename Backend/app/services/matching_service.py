@@ -12,7 +12,9 @@ from app.enums.status import DonationStatus
 from app.services.match_service import MatchService
 from app.services.ranking_service import RankingService
 
-from app.automation.email_service import EmailService
+# from app.automation.email_service import EmailService
+
+MAX_MATCH_DISTANCE_KM = 40
 
 class MatchingService:
 
@@ -21,7 +23,7 @@ class MatchingService:
 
         self.match_service = MatchService(db)
         self.ranking_service = RankingService()
-        self.email_service = EmailService()
+        # self.email_service = EmailService()
 
     def create_matches(
         self,
@@ -44,9 +46,24 @@ class MatchingService:
             .all()
         )
 
+        nearby_ngos = []
+
+        for ngo in ngos:
+
+            distance_km = self.match_service._distance_km(
+                donation,
+                ngo,
+            )
+
+            if distance_km is None:
+                continue
+
+            if distance_km <= MAX_MATCH_DISTANCE_KM:
+                nearby_ngos.append(ngo)
+
         ranked_ngos = self.ranking_service.rank_ngos(
             donation,
-            ngos,
+            nearby_ngos,
         )
 
         existing_matches = (
@@ -57,24 +74,37 @@ class MatchingService:
             .count()
         )
 
+        # if not ranked_ngos:
+
+        #     if existing_matches == 0:
+
+        #         donation.status = DonationStatus.UNMATCHED
+
+        #         self.email_service.send_donation_unmatched(
+        #             donation.restaurant,
+        #         )
+
+        #     return []
+
+
         if not ranked_ngos:
 
             if existing_matches == 0:
                 donation.status = DonationStatus.UNMATCHED
-
-            # TODO:
-            # Notify restaurant that no NGO
-            # could be matched.
+                self.db.flush()
 
             return []
         
         matches = []
 
+        # Never create a second Match row for the same NGO.
+        # Existing rows (even soft-deleted declined ones)
+        # preserve attempt history.
         existing_ngo_ids = {
             match.ngo_id
             for match in donation.matches
-                if not match.is_deleted
         }
+
         ranked_ngos = [
             (ngo, score)
             for ngo, score in ranked_ngos
@@ -109,5 +139,6 @@ class MatchingService:
 
         if donation.status == DonationStatus.CREATED:
             donation.status = DonationStatus.MATCHING
+            self.db.flush()
 
         return matches

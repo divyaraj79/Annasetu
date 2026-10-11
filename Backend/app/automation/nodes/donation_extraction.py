@@ -15,10 +15,6 @@ def donation_extraction_node(
         state["email"]["body"]
     )
 
-    print("\n========== GROQ OUTPUT ==========")
-    print(extracted)
-    print("=================================\n")
-
     state["donation_items"] = extracted.pop(
         "items",
         [],

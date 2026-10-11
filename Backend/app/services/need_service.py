@@ -4,16 +4,23 @@ from sqlalchemy.orm import Session
 
 from app.models.need import Need
 from app.models.ngo import NGO
+from app.models.donation import Donation
 
 from app.schemas.need import NeedCreate, NeedUpdate
 
 from app.enums.status import DonationStatus
 from app.enums.verification_status import VerificationStatus
 
+from app.services.matching_service import MatchingService
+from app.services.lifecycle_service import LifecycleService
+
 
 class NeedService:
     def __init__(self, db: Session):
         self.db = db
+
+        self.matching_service = MatchingService(db)
+        self.lifecycle_service = LifecycleService(db)
 
     def create(self, need_data: NeedCreate) -> Need:
         # Check NGO exists
@@ -46,6 +53,32 @@ class NeedService:
         self.db.add(need)
 
         self.db.flush()
+
+        # Re-run matching for all active donations
+        # because this new Need may make them matchable.
+        donations = (
+            self.db.query(Donation)
+            .filter(
+                Donation.is_deleted == False,
+                Donation.status.in_(
+                    [
+                        DonationStatus.MATCHING,
+                        DonationStatus.UNMATCHED,
+                    ]
+                ),
+            )
+            .all()
+        )
+
+        for donation in donations:
+
+            self.matching_service.create_matches(
+                donation,
+            )
+
+            self.lifecycle_service.notify_next_match(
+                donation,
+            )
 
         self.db.refresh(need)
 

@@ -8,10 +8,14 @@ from app.schemas.restaurant import RestaurantCreate, RestaurantUpdate
 from app.enums.roles import UserRole
 from app.enums.verification_status import VerificationStatus
 
+from app.services.geocoding_service import geocode_address
+from app.automation.email_service import EmailService
+
 
 class RestaurantService:
     def __init__(self, db: Session):
         self.db = db
+        self.email_service = EmailService()
 
     def create(self, restaurant_data: RestaurantCreate) -> Restaurant:
         # Check if user exists
@@ -45,9 +49,23 @@ class RestaurantService:
         if existing_restaurant:
             raise ValueError("Restaurant profile already exists for this user.")
 
+        restaurant_values = restaurant_data.model_dump()
+
+        latitude, longitude = geocode_address(
+            restaurant_values["address"]
+        )
+
+        restaurant_values["latitude"] = latitude
+        restaurant_values["longitude"] = longitude
+
+        # restaurant = Restaurant(
+        #     **restaurant_data.model_dump(),
+        #     verification_status=VerificationStatus.APPROVED
+        # )
+
         restaurant = Restaurant(
-            **restaurant_data.model_dump(),
-            verification_status=VerificationStatus.PENDING
+            **restaurant_values,
+            verification_status=VerificationStatus.APPROVED
         )
 
         # TODO:
@@ -57,6 +75,14 @@ class RestaurantService:
         self.db.add(restaurant)
         self.db.flush()
         self.db.refresh(restaurant)
+
+        # Send approval email
+        try:
+            self.email_service.send_restaurant_registration_approval(
+                restaurant
+            )
+        except Exception as exc:
+            print(f"Failed to send approval email: {exc}")
 
         return restaurant
 
@@ -116,6 +142,13 @@ class RestaurantService:
             )
 
         update_data = restaurant_data.model_dump(exclude_unset=True)
+
+        if "address" in update_data:
+            latitude, longitude = geocode_address(
+                update_data["address"]
+            )
+            update_data["latitude"] = latitude
+            update_data["longitude"] = longitude
 
         for field, value in update_data.items():
             setattr(restaurant, field, value)

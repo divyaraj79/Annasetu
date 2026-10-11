@@ -6,7 +6,7 @@ from app.models.match import Match
 from app.enums.status import MatchStatus, DonationStatus
 
 from app.services.match_service import MatchService
-from app.services.donation_service import DonationService
+# from app.services.donation_service import DonationService
 
 from app.automation.email_service import EmailService
 
@@ -22,7 +22,7 @@ class LifecycleService:
         self.db = db
 
         self.match_service = MatchService(db)
-        self.donation_service = DonationService(db)
+        # self.donation_service = DonationService(db)
 
         self.email_service = EmailService()
 
@@ -63,12 +63,21 @@ class LifecycleService:
 
             if donation.status == DonationStatus.MATCHING:
 
-                self.donation_service.mark_as_unmatched(
-                    donation,
+                donation.status = DonationStatus.UNMATCHED
+
+                print(
+                    f"UNMATCHED EMAIL → "
+                    f"restaurant={donation.restaurant.restaurant_name}, "
+                    f"recipient={donation.restaurant.user.email}"
                 )
 
-                self.email_service.send_donation_unmatched(
+                response = self.email_service.send_donation_unmatched(
                     donation.restaurant,
+                )
+
+                print(
+                    f"UNMATCHED EMAIL GMAIL RESPONSE → "
+                    f"{response.get('id')}"
                 )
 
             return None
@@ -127,10 +136,25 @@ class LifecycleService:
             DonationStatus.COMPLETED
         )
 
+        # TODO (v2):
+        # Match currently stores only donation_id and ngo_id.
+        # It does not store the specific need_id that generated
+        # this match, so we cannot determine which NGO Need has
+        # been fulfilled.
+        #
+        # When need_id is added to Match, mark that Need as
+        # COMPLETED (or decrement its remaining quantity for
+        # partial fulfillment) here.
+
         for item in donation.donation_items:
 
             item.status = (
                 DonationStatus.COMPLETED
+            )
+
+            self.email_service.send_donation_completed(
+                donation.restaurant,
+                match.ngo,
             )
 
         remaining_matches = (
@@ -222,8 +246,16 @@ class LifecycleService:
 
         donation.status = DonationStatus.EXPIRED
 
-        self.donation_service.delete(
-            donation,
-        )
+        # self.donation_service.delete(
+        #     donation,
+        # )
+
+        donation.is_deleted = True
+
+        for item in donation.donation_items:
+            item.is_deleted = True
+
+        for match in donation.matches:
+            match.is_deleted = True
 
         return donation
